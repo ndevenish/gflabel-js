@@ -95,24 +95,25 @@ function innerEdge(widthMm: number, heightMm: number): Drawing {
 
   // Start at left-top corner. The fillet at this start point is
   // applied by closeWithCustomCorner at the end.
+  // The arc extends INWARD (toward center) to (-cx+arcR, 0), creating
+  // the raised boss around each mounting hole.
   return draw([-cx, innerHH])
-    // Left arc down (center at (-cx, 0), from (-cx, arcR) to (-cx-arcR, 0))
+    // Left side: line down to arc start, then arc curving inward
     .lineTo([-cx, arcR])
     .customCorner(cornerR)
-    .sagittaArcTo([-cx - arcR, 0], -sagitta)
-    // Left arc continues down (from (-cx-arcR, 0) to (-cx, -arcR))
-    .sagittaArcTo([-cx, -arcR], -sagitta)
+    .sagittaArcTo([-cx + arcR, 0], sagitta)
+    .sagittaArcTo([-cx, -arcR], sagitta)
     .customCorner(cornerR)
     .lineTo([-cx, -innerHH])
     .customCorner(r)
     // Bottom edge
     .lineTo([cx, -innerHH])
     .customCorner(r)
-    // Right arc up
+    // Right side: line up to arc start, then arc curving inward
     .lineTo([cx, -arcR])
     .customCorner(cornerR)
-    .sagittaArcTo([cx + arcR, 0], -sagitta)
-    .sagittaArcTo([cx, arcR], -sagitta)
+    .sagittaArcTo([cx - arcR, 0], sagitta)
+    .sagittaArcTo([cx, arcR], sagitta)
     .customCorner(cornerR)
     .lineTo([cx, innerHH])
     .customCorner(r)
