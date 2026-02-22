@@ -106,7 +106,6 @@ async function main() {
   // Render
   const renderer = new LabelRenderer(renderOptions);
   let labelDrawing;
-
   if (processedLabels.length > 1 || divisions > 1) {
     labelDrawing = renderDividedLabel(
       processedLabels,

@@ -193,14 +193,32 @@ function signedArea(points: [number, number][]): number {
  * Convert a contour (list of points) to a replicad Drawing.
  */
 function contourToDrawing(points: [number, number][]): Drawing {
-  if (points.length < 3) {
-    // Degenerate contour, return a tiny rectangle as placeholder
+  // Deduplicate consecutive near-coincident points
+  const EPS = 1e-6;
+  const filtered: [number, number][] = [points[0]!];
+  for (let i = 1; i < points.length; i++) {
+    const [px, py] = filtered[filtered.length - 1]!;
+    const [cx, cy] = points[i]!;
+    if (Math.abs(cx - px) > EPS || Math.abs(cy - py) > EPS) {
+      filtered.push([cx, cy]);
+    }
+  }
+  // Also check last vs first
+  if (filtered.length > 1) {
+    const [fx, fy] = filtered[0]!;
+    const [lx, ly] = filtered[filtered.length - 1]!;
+    if (Math.abs(lx - fx) < EPS && Math.abs(ly - fy) < EPS) {
+      filtered.pop();
+    }
+  }
+
+  if (filtered.length < 3) {
     return drawRectangle(0.001, 0.001);
   }
-  const [startX, startY] = points[0]!;
+  const [startX, startY] = filtered[0]!;
   let pen = draw([startX, startY]);
-  for (let i = 1; i < points.length; i++) {
-    const [x, y] = points[i]!;
+  for (let i = 1; i < filtered.length; i++) {
+    const [x, y] = filtered[i]!;
     pen = pen.lineTo([x, y]);
   }
   return pen.close();

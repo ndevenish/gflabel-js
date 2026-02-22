@@ -11,12 +11,17 @@ CASES=(
   'plain "Hello" --width 40 --height 15'
 )
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PY_DIR="$(dirname "$PROJECT_DIR")/gflabel-py"
+
 mkdir -p /tmp/gflabel-compare/{py,js}
 
 for case in "${CASES[@]}"; do
   slug=$(echo "$case" | tr ' {}()/' '_____' | tr -s '_')
-  eval "uv run gflabel $case -o /tmp/gflabel-compare/py/${slug}.svg"
-  eval "node dist/cli.js $case -o /tmp/gflabel-compare/js/${slug}.svg"
+  echo "=== $case ==="
+  eval "cd \"$PY_DIR\" && uv run gflabel $case -o /tmp/gflabel-compare/py/${slug}.svg" 2>&1
+  eval "cd \"$PROJECT_DIR\" && npx tsx src/cli.ts $case -o /tmp/gflabel-compare/js/${slug}.svg" 2>&1
 done
 
 echo "Outputs written. Open /tmp/gflabel-compare/ to compare."
