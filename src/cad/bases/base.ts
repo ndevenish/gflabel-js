@@ -1,0 +1,29 @@
+/**
+ * LabelBase interface — port of bases/__init__.py.
+ */
+
+import type { Solid } from "replicad";
+import type { Vec2 } from "../label.js";
+import type { LabelStyle } from "../options.js";
+
+export interface BaseConfig {
+  baseType: "pred" | "plain";
+  /** Width in gridfinity units (for pred) or mm (for plain) */
+  width: number;
+  /** Height in mm (optional override) */
+  height?: number;
+  style: LabelStyle;
+  depth?: number;
+}
+
+export interface LabelBaseResult {
+  /** The 3D solid of the base (null for 2D-only / "none" base) */
+  solid: Solid | null;
+  /** The usable label area in mm [width, height] */
+  area: Vec2;
+}
+
+export const DEFAULT_MARGINS: Record<string, number> = {
+  pred: 0.4,
+  plain: 0.2,
+};
