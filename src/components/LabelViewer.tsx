@@ -19,6 +19,7 @@ function LabelMesh({ meshData }: { meshData: MeshData }) {
       "normal",
       new THREE.BufferAttribute(meshData.normals, 3),
     );
+    geo.setIndex(new THREE.BufferAttribute(meshData.indices, 1));
     geo.computeBoundingBox();
     geo.computeBoundingSphere();
     return geo;

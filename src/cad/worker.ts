@@ -49,6 +49,7 @@ interface MeshResponse {
   type: "MESH";
   faces: Float32Array;
   normals: Float32Array;
+  indices: Uint32Array;
 }
 
 interface FileResponse {
@@ -141,14 +142,16 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       const mesh = solid.mesh({ tolerance: 0.1, angularTolerance: 15 });
       const faces = new Float32Array(mesh.vertices);
       const normals = new Float32Array(mesh.normals);
+      const indices = new Uint32Array(mesh.triangles);
 
       const msg: MeshResponse = {
         id: req.id,
         type: "MESH",
         faces,
         normals,
+        indices,
       };
-      self.postMessage(msg, { transfer: [faces.buffer, normals.buffer] });
+      self.postMessage(msg, { transfer: [faces.buffer, normals.buffer, indices.buffer] });
     } else if (req.type === "EXPORT") {
       if (!lastSolid) {
         throw new Error("No solid to export — render first");

@@ -9,6 +9,7 @@ import type { LabelStyle, RenderOptions } from "./options.js";
 export interface MeshData {
   faces: Float32Array;
   normals: Float32Array;
+  indices: Uint32Array;
 }
 
 export interface FileData {
@@ -99,8 +100,8 @@ export async function renderLabel(params: {
   const result = (await send({
     type: "RENDER",
     ...params,
-  })) as { type: "MESH"; faces: Float32Array; normals: Float32Array };
-  return { faces: result.faces, normals: result.normals };
+  })) as { type: "MESH"; faces: Float32Array; normals: Float32Array; indices: Uint32Array };
+  return { faces: result.faces, normals: result.normals, indices: result.indices };
 }
 
 /**
