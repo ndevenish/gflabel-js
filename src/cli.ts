@@ -130,7 +130,8 @@ async function main() {
 
   if (ext === ".svg") {
     // SVG exports the 2D label drawing directly
-    const svgString = labelDrawing.toSVG();
+    const { drawingToFilledSVG } = await import("./cad/font.js");
+    const svgString = drawingToFilledSVG(labelDrawing);
     writeFileSync(outputPath, svgString, "utf-8");
   } else if (ext === ".stl") {
     const blob = solid.blobSTL();

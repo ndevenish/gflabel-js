@@ -172,7 +172,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         if (!lastDrawing) {
           throw new Error("No drawing to export — render first");
         }
-        const svgString = lastDrawing.toSVG();
+        const { drawingToFilledSVG } = await import("./font.js");
+        const svgString = drawingToFilledSVG(lastDrawing);
         buffer = new TextEncoder().encode(svgString).buffer;
         mimeType = "image/svg+xml";
         filename = "label.svg";
