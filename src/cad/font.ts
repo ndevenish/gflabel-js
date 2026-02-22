@@ -246,32 +246,68 @@ export function glyphsToDrawing(text: string, sizeMm: number): Drawing {
   // all Y coordinates the sign flips, so outer contours now have negative area.
   // - Negative signed area = outer contour
   // - Positive signed area = hole
-  const outers: Drawing[] = [];
-  const holes: Drawing[] = [];
+  interface ContourInfo {
+    points: [number, number][];
+    drawing: Drawing;
+    area: number;
+  }
+  const outers: ContourInfo[] = [];
+  const holes: ContourInfo[] = [];
 
   for (const contour of contours) {
     const area = signedArea(contour.points);
     const drawing = contourToDrawing(contour.points);
     if (area < 0) {
-      outers.push(drawing);
+      outers.push({ points: contour.points, drawing, area });
     } else {
-      holes.push(drawing);
+      holes.push({ points: contour.points, drawing, area });
     }
   }
 
-  // Fuse all outer contours
+  // Cut holes from their containing outer contour before fusing.
+  // OpenCascade's 2D boolean cut on compound drawings with disjoint faces
+  // can incorrectly remove unrelated faces, so we pair each hole with
+  // its containing outer and apply the cut individually.
+  function boundingBox(pts: [number, number][]): { minX: number; maxX: number; minY: number; maxY: number } {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const [x, y] of pts) {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+    return { minX, maxX, minY, maxY };
+  }
+
+  for (const hole of holes) {
+    const hbb = boundingBox(hole.points);
+    // Find the smallest outer contour that contains this hole's bounding box
+    let bestIdx = -1;
+    let bestArea = -Infinity;
+    for (let i = 0; i < outers.length; i++) {
+      const obb = boundingBox(outers[i]!.points);
+      if (obb.minX <= hbb.minX && obb.maxX >= hbb.maxX &&
+          obb.minY <= hbb.minY && obb.maxY >= hbb.maxY) {
+        // This outer contains the hole; pick the smallest (least negative area)
+        if (outers[i]!.area > bestArea) {
+          bestArea = outers[i]!.area;
+          bestIdx = i;
+        }
+      }
+    }
+    if (bestIdx >= 0) {
+      outers[bestIdx]!.drawing = outers[bestIdx]!.drawing.cut(hole.drawing);
+    }
+  }
+
+  // Fuse all outer contours (holes already cut)
   let result: Drawing | null = null;
   for (const outer of outers) {
-    result = result ? result.fuse(outer) : outer;
+    result = result ? result.fuse(outer.drawing) : outer.drawing;
   }
 
   if (!result) {
     return drawRectangle(0.001, 0.001);
-  }
-
-  // Cut all holes
-  for (const hole of holes) {
-    result = result.cut(hole);
   }
 
   // Center at origin — text is rendered at baseline y=0, so we need to center it
