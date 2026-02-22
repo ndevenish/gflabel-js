@@ -213,7 +213,7 @@ function contourToDrawing(points: [number, number][]): Drawing {
  * @param sizeMm - Font size in mm
  * @returns A Drawing representing the text
  */
-export function textToDrawing(text: string, sizeMm: number): Drawing {
+export function glyphsToDrawing(text: string, sizeMm: number): Drawing {
   const font = getFont();
   const scale = sizeMm / font.unitsPerEm;
   const path = font.getPath(text, 0, 0, font.unitsPerEm);

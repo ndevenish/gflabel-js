@@ -9,7 +9,6 @@ import {
   drawRoundedRectangle,
   type Solid,
 } from "replicad";
-import { LabelStyle } from "../options.js";
 import type { BaseConfig, LabelBaseResult } from "./base.js";
 import type { Vec2 } from "../label.js";
 
@@ -23,30 +22,27 @@ function predWidthMm(widthU: number): number {
 
 /**
  * Build a pred label base.
+ *
+ * The base is built with label surface at z=0:
+ * - Body extends from z=-depth to z=+depth (then shifted so top is at z=0)
+ * - Label extrusion happens in extrudeLabel() based on style
  */
 export function buildPredBase(config: BaseConfig): LabelBaseResult {
   const widthMm = predWidthMm(config.width);
   const heightMm = config.height ?? 11.5;
-  const recessed = config.style === LabelStyle.EMBOSSED;
   const depth = config.depth ?? 0.4;
 
   // Build 3D geometry — approximate the pred outer edge with a rounded rectangle
   const outerProfile = drawRoundedRectangle(widthMm, heightMm, 0.9);
-  let solid = outerProfile.sketchOnPlane("XY").extrude(depth) as Solid;
 
-  // Also extrude downward
+  // Extrude the base body: from z=-depth to z=+depth, then shift down
+  // so the label surface is at z=0
+  let solid = outerProfile.sketchOnPlane("XY").extrude(depth) as Solid;
   const solidBottom = outerProfile.sketchOnPlane("XY").extrude(-depth) as Solid;
   solid = solid.fuse(solidBottom);
 
-  if (recessed) {
-    // Cut the inner recess from the top
-    const innerProfile = drawRoundedRectangle(widthMm - 2.2, heightMm - 1, 0.4);
-    const innerSolid = innerProfile.sketchOnPlane("XY", depth).extrude(-depth) as Solid;
-    solid = solid.cut(innerSolid);
-  } else {
-    // Move the whole body down so label surface is at z=0
-    solid = solid.translate([0, 0, -depth]) as unknown as Solid;
-  }
+  // Shift so top surface is at z=0 (label surface)
+  solid = solid.translate([0, 0, -depth]) as unknown as Solid;
 
   // Mounting holes
   const straightWidth = widthMm - 1.9 * 2;

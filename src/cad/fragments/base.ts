@@ -6,9 +6,9 @@ import type { Drawing } from "replicad";
 import type { RenderOptions } from "../options.js";
 
 export interface FragmentRenderResult {
-  drawing: Drawing;
+  /** The rendered drawing, or null for invisible fragments (spacers). */
+  drawing: Drawing | null;
   width: number;
-  height: number;
 }
 
 export abstract class Fragment {

@@ -88,7 +88,6 @@ async function main() {
     baseType: baseType as "pred" | "plain",
     width,
     height,
-    style,
     depth,
   };
 
@@ -130,7 +129,11 @@ async function main() {
   const outputPath = resolve(opts.output);
   const ext = extname(outputPath).toLowerCase();
 
-  if (ext === ".stl") {
+  if (ext === ".svg") {
+    // SVG exports the 2D label drawing directly
+    const svgString = labelDrawing.toSVG();
+    writeFileSync(outputPath, svgString, "utf-8");
+  } else if (ext === ".stl") {
     const blob = solid.blobSTL();
     const buffer = Buffer.from(await blob.arrayBuffer());
     writeFileSync(outputPath, buffer);

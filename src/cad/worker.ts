@@ -35,7 +35,7 @@ interface RenderRequest {
 interface ExportRequest {
   id: string;
   type: "EXPORT";
-  format: "stl" | "step";
+  format: "stl" | "step" | "svg";
 }
 
 type WorkerRequest = RenderRequest | ExportRequest;
@@ -71,6 +71,7 @@ interface ErrorResponse {
 // ── State ──────────────────────────────────────────────────────
 
 let lastSolid: Solid | null = null;
+let lastDrawing: import("replicad").Drawing | null = null;
 
 // ── Init ──────────────────────────────────────────────────────
 
@@ -125,11 +126,13 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         labelDrawing = renderer.render(specs[0]!, adjustedArea);
       }
 
+      lastDrawing = labelDrawing;
+
       // Extrude label onto base
       const solid = extrudeLabel(
         baseResult,
         labelDrawing,
-        req.base.style,
+        req.style,
         req.base.depth ?? 0.4,
       );
       lastSolid = solid;
@@ -165,6 +168,14 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         buffer = await blob.arrayBuffer();
         mimeType = "model/step";
         filename = "label.step";
+      } else if (req.format === "svg") {
+        if (!lastDrawing) {
+          throw new Error("No drawing to export — render first");
+        }
+        const svgString = lastDrawing.toSVG();
+        buffer = new TextEncoder().encode(svgString).buffer;
+        mimeType = "image/svg+xml";
+        filename = "label.svg";
       } else {
         throw new Error(`Unknown export format: ${req.format}`);
       }

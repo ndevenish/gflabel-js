@@ -4,7 +4,7 @@
 
 import { drawRectangle } from "replicad";
 import type { RenderOptions } from "../options.js";
-import { textToDrawing } from "../font.js";
+import { glyphsToDrawing } from "../font.js";
 import { Fragment, registerFragment } from "./base.js";
 import type { FragmentRenderResult } from "./base.js";
 
@@ -77,12 +77,12 @@ registerFragment(["measure"], () => {
       let drawing = leftCap.fuse(rightCap).fuse(centerLine);
 
       // Add measurement text below
-      const text = textToDrawing(`${maxWidth.toFixed(1)}`, height / 2);
+      const text = glyphsToDrawing(`${maxWidth.toFixed(1)}`, height / 2);
       const textShifted = text.translate([0, -(height / 4)]);
       drawing = drawing.fuse(textShifted);
 
       const bb = drawing.boundingBox;
-      return { drawing, width: bb.width, height: bb.height };
+      return { drawing, width: bb.width };
     }
   })();
 });

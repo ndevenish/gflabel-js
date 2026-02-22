@@ -33,6 +33,8 @@ export function ControlPanel({
     ensureReady().then(() => setWorkerReady(true));
   }, []);
 
+  const insertAtCursorRef = React.useRef<((text: string) => void) | null>(null);
+
   const handleRender = React.useCallback(async () => {
     if (!workerReady || !spec.trim()) return;
 
@@ -42,7 +44,6 @@ export function ControlPanel({
         baseType,
         width,
         height,
-        style,
       };
       const mesh = await renderLabel({
         spec,
@@ -108,7 +109,7 @@ export function ControlPanel({
         </select>
       </div>
 
-      <LabelSpecInput value={spec} onChange={setSpec} />
+      <LabelSpecInput value={spec} onChange={setSpec} insertAtCursorRef={insertAtCursorRef} />
 
       <button
         onClick={handleRender}

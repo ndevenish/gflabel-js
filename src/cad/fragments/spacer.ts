@@ -2,7 +2,6 @@
  * Spacer and expanding fragments.
  */
 
-import { drawRectangle } from "replicad";
 import type { RenderOptions } from "../options.js";
 import { Fragment, registerFragment } from "./base.js";
 import type { FragmentRenderResult } from "./base.js";
@@ -15,12 +14,11 @@ export class SpacerFragment extends Fragment {
   }
 
   render(
-    height: number,
+    _height: number,
     _maxWidth: number,
     _opts: RenderOptions,
   ): FragmentRenderResult {
-    const drawing = drawRectangle(this.distance, height);
-    return { drawing, width: this.distance, height };
+    return { drawing: null, width: this.distance };
   }
 }
 
@@ -30,12 +28,11 @@ export class ExpandingFragment extends Fragment {
   visible = false;
 
   render(
-    height: number,
+    _height: number,
     maxWidth: number,
     _opts: RenderOptions,
   ): FragmentRenderResult {
-    const drawing = drawRectangle(maxWidth, height);
-    return { drawing, width: maxWidth, height };
+    return { drawing: null, width: maxWidth };
   }
 
   minWidth(_height: number): number {

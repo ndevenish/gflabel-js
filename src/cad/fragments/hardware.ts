@@ -148,10 +148,6 @@ function drawingWidth(d: Drawing): number {
   return d.boundingBox.width;
 }
 
-function drawingHeight(d: Drawing): number {
-  return d.boundingBox.height;
-}
-
 // ── Hexnut Fragment ──────────────────────────────────────────
 
 registerFragment(["hexnut", "nut"], () => {
@@ -167,7 +163,6 @@ registerFragment(["hexnut", "nut"], () => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -194,7 +189,6 @@ registerFragment(["hexhead"], (...drives: string[]) => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -221,7 +215,6 @@ registerFragment(["head"], (...headshapes: string[]) => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -243,7 +236,6 @@ registerFragment(["washer"], () => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -274,7 +266,6 @@ registerFragment(["lockwasher"], () => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -293,7 +284,6 @@ registerFragment(["circle"], () => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -314,7 +304,6 @@ registerFragment(["tnut"], () => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -342,7 +331,6 @@ registerFragment(["nut_profile"], () => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -379,7 +367,6 @@ registerFragment(["locknut_profile"], () => {
       return {
         drawing,
         width: drawingWidth(drawing),
-        height: drawingHeight(drawing),
       };
     }
   })();
@@ -397,7 +384,7 @@ registerFragment(["box"], (inWidth: string, inHeight?: string) => {
       const w = parseFloat(inWidth);
       const h = inHeight ? parseFloat(inHeight) : height;
       const drawing = drawRectangle(w, h);
-      return { drawing, width: w, height: h };
+      return { drawing, width: w };
     }
   })();
 });
@@ -570,7 +557,7 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
       }
 
       const bb = drawing.boundingBox;
-      return { drawing, width: bb.width, height: bb.height };
+      return { drawing, width: bb.width };
     }
   })();
 });
@@ -698,7 +685,7 @@ registerFragment(
         }
 
         const bb = drawing.boundingBox;
-        return { drawing, width: bb.width, height: bb.height };
+        return { drawing, width: bb.width };
       }
     })();
   },
@@ -746,7 +733,7 @@ registerFragment(["magnet"], () => {
       drawing = drawing.rotate(45);
 
       const bb = drawing.boundingBox;
-      return { drawing, width: bb.width, height: bb.height };
+      return { drawing, width: bb.width };
     }
   })();
 });
@@ -788,7 +775,7 @@ registerFragment(["threaded_insert"], () => {
       drawing = drawing.translate([0, 2.5 * s / 2]);
 
       const bb = drawing.boundingBox;
-      return { drawing, width: bb.width, height: bb.height };
+      return { drawing, width: bb.width };
     }
   })();
 });

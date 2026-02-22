@@ -4,7 +4,6 @@
 
 import type { Solid } from "replicad";
 import type { Vec2 } from "../label.js";
-import type { LabelStyle } from "../options.js";
 
 export interface BaseConfig {
   baseType: "pred" | "plain";
@@ -12,7 +11,6 @@ export interface BaseConfig {
   width: number;
   /** Height in mm (optional override) */
   height?: number;
-  style: LabelStyle;
   depth?: number;
 }
 

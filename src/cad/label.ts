@@ -249,7 +249,7 @@ export class LabelRenderer {
       if (!fragResult) continue;
       const fragWidth = fragResult.width;
 
-      if (frag.visible) {
+      if (frag.visible && fragResult.drawing) {
         const translated = fragResult.drawing.translate([
           x + fragWidth / 2,
           0,

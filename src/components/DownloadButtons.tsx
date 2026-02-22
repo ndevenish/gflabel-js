@@ -4,7 +4,7 @@ import { exportFile } from "../cad/workerClient.js";
 export function DownloadButtons() {
   const [exporting, setExporting] = React.useState(false);
 
-  const handleExport = async (format: "stl" | "step") => {
+  const handleExport = async (format: "stl" | "step" | "svg") => {
     setExporting(true);
     try {
       const file = await exportFile(format);
@@ -53,6 +53,13 @@ export function DownloadButtons() {
           onClick={() => handleExport("step")}
         >
           STEP
+        </button>
+        <button
+          style={btnStyle}
+          disabled={exporting}
+          onClick={() => handleExport("svg")}
+        >
+          SVG
         </button>
       </div>
     </div>

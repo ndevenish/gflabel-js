@@ -107,7 +107,7 @@ export async function renderLabel(params: {
  * Export the last rendered solid to a file.
  */
 export async function exportFile(
-  format: "stl" | "step",
+  format: "stl" | "step" | "svg",
 ): Promise<FileData> {
   await waitReady();
   const result = (await send({
