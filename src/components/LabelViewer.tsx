@@ -9,12 +9,8 @@ interface Props {
 }
 
 function LabelMesh({ meshData }: { meshData: MeshData }) {
-  const geometryRef = React.useRef<THREE.BufferGeometry>(null);
-
-  React.useEffect(() => {
-    const geo = geometryRef.current;
-    if (!geo) return;
-
+  const geometry = React.useMemo(() => {
+    const geo = new THREE.BufferGeometry();
     geo.setAttribute(
       "position",
       new THREE.BufferAttribute(meshData.faces, 3),
@@ -25,11 +21,15 @@ function LabelMesh({ meshData }: { meshData: MeshData }) {
     );
     geo.computeBoundingBox();
     geo.computeBoundingSphere();
+    return geo;
   }, [meshData]);
 
+  React.useEffect(() => {
+    return () => geometry.dispose();
+  }, [geometry]);
+
   return (
-    <mesh>
-      <bufferGeometry ref={geometryRef} />
+    <mesh geometry={geometry}>
       <meshStandardMaterial color="#6b9bd2" side={THREE.DoubleSide} />
     </mesh>
   );
