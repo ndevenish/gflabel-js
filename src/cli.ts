@@ -89,6 +89,7 @@ async function main() {
     width,
     height,
     depth,
+    style,
   };
 
   const renderOptions = {

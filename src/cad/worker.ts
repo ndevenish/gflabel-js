@@ -103,8 +103,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         ...req.options,
       };
 
-      // Build the base
-      const baseResult = buildBase(req.base);
+      // Build the base (pass style so pred base can create recess for embossed)
+      const baseResult = buildBase({ ...req.base, style: req.style });
 
       // Render the label
       const renderer = new LabelRenderer(options);
