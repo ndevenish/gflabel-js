@@ -123,12 +123,12 @@ function pathToContours(
           current = [];
         }
         cx = cmd.x * scale;
-        cy = cmd.y * scale;
+        cy = -cmd.y * scale;
         current.push([cx, cy]);
         break;
       case "L":
         cx = cmd.x * scale;
-        cy = cmd.y * scale;
+        cy = -cmd.y * scale;
         current.push([cx, cy]);
         break;
       case "C": {
@@ -136,15 +136,15 @@ function pathToContours(
           cx,
           cy,
           cmd.x1 * scale,
-          cmd.y1 * scale,
+          -cmd.y1 * scale,
           cmd.x2 * scale,
-          cmd.y2 * scale,
+          -cmd.y2 * scale,
           cmd.x * scale,
-          cmd.y * scale,
+          -cmd.y * scale,
         );
         current.push(...pts);
         cx = cmd.x * scale;
-        cy = cmd.y * scale;
+        cy = -cmd.y * scale;
         break;
       }
       case "Q": {
@@ -152,13 +152,13 @@ function pathToContours(
           cx,
           cy,
           cmd.x1 * scale,
-          cmd.y1 * scale,
+          -cmd.y1 * scale,
           cmd.x * scale,
-          cmd.y * scale,
+          -cmd.y * scale,
         );
         current.push(...pts);
         cx = cmd.x * scale;
-        cy = cmd.y * scale;
+        cy = -cmd.y * scale;
         break;
       }
       case "Z":
@@ -242,16 +242,17 @@ export function glyphsToDrawing(text: string, sizeMm: number): Drawing {
   }
 
   // Separate outer contours from holes via winding direction.
-  // opentype.js uses top-left origin (Y down), so after our scale:
-  // - Positive signed area = outer contour
-  // - Negative signed area = hole
+  // opentype.js Y-down outer contours have positive signedArea; after negating
+  // all Y coordinates the sign flips, so outer contours now have negative area.
+  // - Negative signed area = outer contour
+  // - Positive signed area = hole
   const outers: Drawing[] = [];
   const holes: Drawing[] = [];
 
   for (const contour of contours) {
     const area = signedArea(contour.points);
     const drawing = contourToDrawing(contour.points);
-    if (area > 0) {
+    if (area < 0) {
       outers.push(drawing);
     } else {
       holes.push(drawing);

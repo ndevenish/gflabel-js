@@ -157,7 +157,7 @@ registerFragment(["hexnut", "nut"], () => {
       _maxWidth: number,
       _opts: RenderOptions,
     ): FragmentRenderResult {
-      const outer = drawPolysides(height / 2, 6);
+      const outer = drawPolysides(height / 2, 6).rotate(30);
       const inner = drawCircle(height / 2 * 0.4);
       const drawing = outer.cut(inner);
       return {
@@ -177,7 +177,7 @@ registerFragment(["hexhead"], (...drives: string[]) => {
       _maxWidth: number,
       _opts: RenderOptions,
     ): FragmentRenderResult {
-      let drawing: Drawing = drawPolysides(height / 2, 6);
+      let drawing: Drawing = drawPolysides(height / 2, 6).rotate(30);
       if (drives.length > 0) {
         const driveDrawing = compoundDriveShape(
           drives,
