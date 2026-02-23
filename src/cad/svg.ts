@@ -402,10 +402,12 @@ function contourToDrawing(points: [number, number][]): Drawing {
 // ── Public API ─────────────────────────────────────────────────
 
 /**
- * Convert contours from an SVG path into a single replicad Drawing.
+ * Convert contours from a single SVG path `d` attribute into a Drawing.
  *
- * Uses bounding box containment to pair holes with outers, independent of
- * winding direction (SVG and font paths may have opposite conventions).
+ * The largest contour (by absolute area) establishes the "outer" winding
+ * direction. Contours with that same winding sign are outers (fused);
+ * contours with the opposite sign are holes (cut from their containing
+ * outer, matched by bounding-box containment).
  */
 export function contoursToDrawing(contours: Contour[]): Drawing {
   if (contours.length === 0) return drawRectangle(0.001, 0.001);
@@ -413,85 +415,91 @@ export function contoursToDrawing(contours: Contour[]): Drawing {
   interface ContourInfo {
     points: [number, number][];
     drawing: Drawing;
-    absArea: number;
+    area: number;
     bb: { minX: number; maxX: number; minY: number; maxY: number };
   }
 
   const infos: ContourInfo[] = contours.map((c) => ({
     points: c.points,
     drawing: contourToDrawing(c.points),
-    absArea: Math.abs(signedArea(c.points)),
+    area: signedArea(c.points),
     bb: boundingBox(c.points),
   }));
 
-  // Determine outer vs hole by bounding box containment:
-  // A contour is a hole if its BB is contained within another contour's BB
-  // and that container has a larger absolute area.
-  const isHole = new Array(infos.length).fill(false);
-  const holeOf = new Array<number>(infos.length).fill(-1);
+  // The largest contour defines the outer winding direction
+  let largestIdx = 0;
+  for (let i = 1; i < infos.length; i++) {
+    if (Math.abs(infos[i]!.area) > Math.abs(infos[largestIdx]!.area)) {
+      largestIdx = i;
+    }
+  }
+  const outerSign = Math.sign(infos[largestIdx]!.area);
 
-  for (let i = 0; i < infos.length; i++) {
-    const ibb = infos[i]!.bb;
-    let bestContainer = -1;
-    let bestContainerArea = Infinity;
+  const outers: ContourInfo[] = [];
+  const holes: ContourInfo[] = [];
 
-    for (let j = 0; j < infos.length; j++) {
-      if (i === j) continue;
-      const jbb = infos[j]!.bb;
-      // Check if j's BB contains i's BB
+  for (const info of infos) {
+    if (outerSign !== 0 && Math.sign(info.area) !== outerSign) {
+      holes.push(info);
+    } else {
+      outers.push(info);
+    }
+  }
+
+  // Pair each hole with its smallest containing outer via bounding box
+  for (const hole of holes) {
+    const hbb = hole.bb;
+    let bestIdx = -1;
+    let bestArea = Infinity;
+
+    for (let i = 0; i < outers.length; i++) {
+      const obb = outers[i]!.bb;
       if (
-        jbb.minX <= ibb.minX + 0.01 &&
-        jbb.maxX >= ibb.maxX - 0.01 &&
-        jbb.minY <= ibb.minY + 0.01 &&
-        jbb.maxY >= ibb.maxY - 0.01 &&
-        infos[j]!.absArea > infos[i]!.absArea
+        obb.minX <= hbb.minX + 0.01 &&
+        obb.maxX >= hbb.maxX - 0.01 &&
+        obb.minY <= hbb.minY + 0.01 &&
+        obb.maxY >= hbb.maxY - 0.01
       ) {
-        // Pick the smallest container (closest parent)
-        if (infos[j]!.absArea < bestContainerArea) {
-          bestContainerArea = infos[j]!.absArea;
-          bestContainer = j;
+        const absArea = Math.abs(outers[i]!.area);
+        if (absArea < bestArea) {
+          bestArea = absArea;
+          bestIdx = i;
         }
       }
     }
-
-    if (bestContainer >= 0) {
-      isHole[i] = true;
-      holeOf[i] = bestContainer;
+    if (bestIdx >= 0) {
+      outers[bestIdx]!.drawing = outers[bestIdx]!.drawing.cut(hole.drawing);
     }
   }
 
-  // Cut holes from their outers
-  for (let i = 0; i < infos.length; i++) {
-    if (isHole[i] && holeOf[i]! >= 0) {
-      const parent = holeOf[i]!;
-      infos[parent]!.drawing = infos[parent]!.drawing.cut(infos[i]!.drawing);
-    }
-  }
-
-  // Fuse all outer contours
+  // Fuse all outer contours (holes already cut)
   let result: Drawing | null = null;
-  for (let i = 0; i < infos.length; i++) {
-    if (!isHole[i]) {
-      result = result ? result.fuse(infos[i]!.drawing) : infos[i]!.drawing;
-    }
+  for (const outer of outers) {
+    result = result ? result.fuse(outer.drawing) : outer.drawing;
   }
   return result ?? drawRectangle(0.001, 0.001);
 }
 
 /**
  * Parse an SVG string and convert all <path> elements to a single Drawing.
+ *
+ * Each <path> element is processed independently (winding-based hole
+ * detection within its sub-paths), then all paths are fused together.
+ * This prevents contours from separate <path> elements being misidentified
+ * as holes of each other.
  */
 export function svgToDrawing(svgString: string): Drawing {
-  // Simple XML parser for <path d="..."> elements
   const pathRe = /<path[^>]*\bd="([^"]+)"/g;
-  const allContours: Contour[] = [];
+  let result: Drawing | null = null;
   let m: RegExpExecArray | null;
 
   while ((m = pathRe.exec(svgString)) !== null) {
     const d = m[1]!;
     const contours = parseSvgPathD(d);
-    allContours.push(...contours);
+    if (contours.length === 0) continue;
+    const pathDrawing = contoursToDrawing(contours);
+    result = result ? result.fuse(pathDrawing) : pathDrawing;
   }
 
-  return contoursToDrawing(allContours);
+  return result ?? drawRectangle(0.001, 0.001);
 }
