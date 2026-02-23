@@ -486,12 +486,6 @@
     "category": "Resistor"
   },
   {
-    "name": "sym-resistor-ieee-rheostat",
-    "label": "Rheostat / Variable Resistor (IEEE/ANSI) (IEEE)",
-    "spec": "{sym(resistor-ieee-rheostat)}",
-    "category": "Resistor"
-  },
-  {
     "name": "sym-resistor-ieee-potentiometer",
     "label": "Potentiometer (IEEE/ANSI) (IEEE)",
     "spec": "{sym(resistor-ieee-potentiometer)}",

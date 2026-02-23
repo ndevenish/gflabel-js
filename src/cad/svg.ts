@@ -210,14 +210,16 @@ export function parseSvgPathD(d: string): Contour[] {
       continue;
     }
 
-    // Process repeated parameter groups for the command
+    // Process repeated parameter groups for the command.
+    // SVG spec: implicit repeats after M/m are treated as L/l.
     let first = true;
+    let implicitCmd = CMD;
     while (i <= tokens.length) {
       // Check if next token is a number (implicit repeat) or a command
       if (!first && (i >= tokens.length || typeof tokens[i] === "string")) break;
       first = false;
 
-      if (CMD === "M") {
+      if (implicitCmd === "M") {
         const [nums, ni] = readNumbers(tokens, i, 2);
         i = ni;
         if (current.length > 0) {
@@ -230,26 +232,28 @@ export function parseSvgPathD(d: string): Contour[] {
         startY = cy;
         current.push([cx, -cy]);
         lastCx2 = lastCy2 = undefined;
-      } else if (CMD === "L") {
+        // After first M pair, implicit repeats become L
+        implicitCmd = "L";
+      } else if (implicitCmd === "L") {
         const [nums, ni] = readNumbers(tokens, i, 2);
         i = ni;
         cx = isRelative ? cx + nums[0]! : nums[0]!;
         cy = isRelative ? cy + nums[1]! : nums[1]!;
         current.push([cx, -cy]);
         lastCx2 = lastCy2 = undefined;
-      } else if (CMD === "H") {
+      } else if (implicitCmd === "H") {
         const [nums, ni] = readNumbers(tokens, i, 1);
         i = ni;
         cx = isRelative ? cx + nums[0]! : nums[0]!;
         current.push([cx, -cy]);
         lastCx2 = lastCy2 = undefined;
-      } else if (CMD === "V") {
+      } else if (implicitCmd === "V") {
         const [nums, ni] = readNumbers(tokens, i, 1);
         i = ni;
         cy = isRelative ? cy + nums[0]! : nums[0]!;
         current.push([cx, -cy]);
         lastCx2 = lastCy2 = undefined;
-      } else if (CMD === "C") {
+      } else if (implicitCmd === "C") {
         const [nums, ni] = readNumbers(tokens, i, 6);
         i = ni;
         const x1 = isRelative ? cx + nums[0]! : nums[0]!;
@@ -264,7 +268,7 @@ export function parseSvgPathD(d: string): Contour[] {
         lastCy2 = y2;
         cx = x;
         cy = y;
-      } else if (CMD === "S") {
+      } else if (implicitCmd === "S") {
         // Smooth cubic: reflect last control point
         const [nums, ni] = readNumbers(tokens, i, 4);
         i = ni;
@@ -280,7 +284,7 @@ export function parseSvgPathD(d: string): Contour[] {
         lastCy2 = y2;
         cx = x;
         cy = y;
-      } else if (CMD === "Q") {
+      } else if (implicitCmd === "Q") {
         const [nums, ni] = readNumbers(tokens, i, 4);
         i = ni;
         const x1 = isRelative ? cx + nums[0]! : nums[0]!;
@@ -298,7 +302,7 @@ export function parseSvgPathD(d: string): Contour[] {
         lastCy2 = undefined;
         cx = x;
         cy = y;
-      } else if (CMD === "T") {
+      } else if (implicitCmd === "T") {
         // Smooth quadratic - not common in these SVGs but handle anyway
         const [nums, ni] = readNumbers(tokens, i, 2);
         i = ni;
@@ -308,7 +312,7 @@ export function parseSvgPathD(d: string): Contour[] {
         cx = x;
         cy = y;
         lastCx2 = lastCy2 = undefined;
-      } else if (CMD === "A") {
+      } else if (implicitCmd === "A") {
         const [nums, ni] = readNumbers(tokens, i, 7);
         i = ni;
         const arx = nums[0]!;
