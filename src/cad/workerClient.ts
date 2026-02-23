@@ -14,6 +14,10 @@ export interface MeshData {
   baseTriangleCount?: number;
 }
 
+export interface SvgData {
+  svg: string;
+}
+
 export interface FileData {
   buffer: ArrayBuffer;
   mimeType: string;
@@ -104,6 +108,24 @@ export async function renderLabel(params: {
     ...params,
   })) as { type: "MESH"; faces: Float32Array; normals: Float32Array; indices: Uint32Array; baseTriangleCount?: number };
   return { faces: result.faces, normals: result.normals, indices: result.indices, style: params.style, baseTriangleCount: result.baseTriangleCount };
+}
+
+/**
+ * Render a label and get back SVG string for 2D preview (no 3D extrusion).
+ */
+export async function renderSVG(params: {
+  spec: string;
+  base: BaseConfig;
+  style: LabelStyle;
+  options?: Partial<RenderOptions>;
+  divisions?: number;
+}): Promise<SvgData> {
+  await waitReady();
+  const result = (await send({
+    type: "RENDER_SVG",
+    ...params,
+  })) as { type: "SVG"; svg: string };
+  return { svg: result.svg };
 }
 
 /**

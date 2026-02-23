@@ -32,13 +32,23 @@ interface RenderRequest {
   divisions?: number;
 }
 
+interface RenderSvgRequest {
+  id: string;
+  type: "RENDER_SVG";
+  spec: string;
+  base: BaseConfig;
+  style: LabelStyle;
+  options?: Partial<RenderOptions>;
+  divisions?: number;
+}
+
 interface ExportRequest {
   id: string;
   type: "EXPORT";
   format: "stl" | "step" | "svg";
 }
 
-type WorkerRequest = RenderRequest | ExportRequest;
+type WorkerRequest = RenderRequest | RenderSvgRequest | ExportRequest;
 
 interface ReadyResponse {
   type: "READY";
@@ -59,6 +69,12 @@ interface FileResponse {
   buffer: ArrayBuffer;
   mimeType: string;
   filename: string;
+}
+
+interface SvgResponse {
+  id: string;
+  type: "SVG";
+  svg: string;
 }
 
 interface ErrorResponse {
@@ -154,6 +170,46 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         baseTriangleCount: extrudeResult.baseTriangleCount,
       };
       self.postMessage(msg, { transfer: [faces.buffer, normals.buffer, indices.buffer] });
+    } else if (req.type === "RENDER_SVG") {
+      const options: RenderOptions = {
+        ...DEFAULT_RENDER_OPTIONS,
+        ...req.options,
+      };
+
+      // Build the base only for area dimensions
+      const baseResult = buildBase({ ...req.base, style: req.style });
+
+      // Render label drawing (2D only — no extrude/mesh)
+      const renderer = new LabelRenderer(options);
+      const specs = req.spec.split("\0");
+      let labelDrawing;
+
+      if (specs.length > 1 || (req.divisions && req.divisions > 1)) {
+        labelDrawing = renderDividedLabel(
+          specs,
+          baseResult.area,
+          req.divisions ?? specs.length,
+          options,
+        );
+      } else {
+        const adjustedArea = {
+          x: baseResult.area.x - options.marginMm * 2,
+          y: baseResult.area.y - options.marginMm * 2,
+        };
+        labelDrawing = renderer.render(specs[0]!, adjustedArea);
+      }
+
+      lastDrawing = labelDrawing;
+
+      const { drawingToFilledSVG } = await import("./font.js");
+      const svgString = drawingToFilledSVG(labelDrawing);
+
+      const msg: SvgResponse = {
+        id: req.id,
+        type: "SVG",
+        svg: svgString,
+      };
+      self.postMessage(msg);
     } else if (req.type === "EXPORT") {
       if (!lastSolid) {
         throw new Error("No solid to export — render first");

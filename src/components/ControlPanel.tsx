@@ -3,13 +3,17 @@ import { BaseSelector } from "./BaseSelector.js";
 import { BaseSizeControls } from "./BaseSizeControls.js";
 import { LabelSpecInput } from "./LabelSpecInput.js";
 import { DownloadButtons } from "./DownloadButtons.js";
-import { renderLabel, ensureReady } from "../cad/workerClient.js";
+import { renderLabel, renderSVG, ensureReady } from "../cad/workerClient.js";
 import type { MeshData } from "../cad/workerClient.js";
 import { LabelStyle } from "../cad/options.js";
 import type { BaseConfig, BaseType } from "../cad/bases/base.js";
+import type { PreviewMode } from "../App.js";
 
 interface Props {
   onMeshUpdate: (mesh: MeshData) => void;
+  onSvgUpdate: (svg: string) => void;
+  previewMode: PreviewMode;
+  onPreviewModeChange: (mode: PreviewMode) => void;
   onRenderStart: () => void;
   onRenderEnd: () => void;
   onError: (error: string) => void;
@@ -17,6 +21,9 @@ interface Props {
 
 export function ControlPanel({
   onMeshUpdate,
+  onSvgUpdate,
+  previewMode,
+  onPreviewModeChange,
   onRenderStart,
   onRenderEnd,
   onError,
@@ -35,7 +42,7 @@ export function ControlPanel({
 
   const insertAtCursorRef = React.useRef<((text: string) => void) | null>(null);
 
-  const handleRender = React.useCallback(async () => {
+  const doRender = React.useCallback(async () => {
     if (!workerReady || !spec.trim()) return;
 
     onRenderStart();
@@ -45,12 +52,21 @@ export function ControlPanel({
         width,
         height,
       };
-      const mesh = await renderLabel({
-        spec,
-        base: baseConfig,
-        style,
-      });
-      onMeshUpdate(mesh);
+      if (previewMode === "svg") {
+        const result = await renderSVG({
+          spec,
+          base: baseConfig,
+          style,
+        });
+        onSvgUpdate(result.svg);
+      } else {
+        const mesh = await renderLabel({
+          spec,
+          base: baseConfig,
+          style,
+        });
+        onMeshUpdate(mesh);
+      }
     } catch (err) {
       onError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -63,11 +79,38 @@ export function ControlPanel({
     width,
     height,
     style,
+    previewMode,
     onMeshUpdate,
+    onSvgUpdate,
     onRenderStart,
     onRenderEnd,
     onError,
   ]);
+
+  // Keep a stable ref to doRender so the debounce effect doesn't re-trigger
+  // when callback identity changes.
+  const doRenderRef = React.useRef(doRender);
+  React.useEffect(() => { doRenderRef.current = doRender; }, [doRender]);
+
+  // Auto-render: debounced in SVG mode on input changes, immediate on mode switch
+  const prevModeRef = React.useRef(previewMode);
+  React.useEffect(() => {
+    if (!workerReady || !spec.trim()) return;
+
+    const modeChanged = prevModeRef.current !== previewMode;
+    prevModeRef.current = previewMode;
+
+    if (previewMode === "svg" || modeChanged) {
+      const delay = modeChanged ? 0 : 300;
+      const timer = setTimeout(() => {
+        doRenderRef.current();
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spec, baseType, width, height, style, previewMode, workerReady]);
+
+  const handleRender = doRender;
 
   return (
     <div
@@ -110,6 +153,39 @@ export function ControlPanel({
       </div>
 
       <LabelSpecInput value={spec} onChange={setSpec} insertAtCursorRef={insertAtCursorRef} />
+
+      <div>
+        <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
+          Preview
+        </label>
+        <div
+          style={{
+            display: "flex",
+            borderRadius: 6,
+            overflow: "hidden",
+            border: "1px solid #d1d5db",
+          }}
+        >
+          {(["svg", "3d"] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => onPreviewModeChange(mode)}
+              style={{
+                flex: 1,
+                padding: "6px 0",
+                border: "none",
+                background: previewMode === mode ? "#2563eb" : "#f3f4f6",
+                color: previewMode === mode ? "white" : "#374151",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {mode.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <button
         onClick={handleRender}

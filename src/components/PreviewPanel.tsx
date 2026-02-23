@@ -1,19 +1,40 @@
 import { LabelViewer } from "./LabelViewer.js";
 import type { MeshData } from "../cad/workerClient.js";
+import type { PreviewMode } from "../App.js";
 
 interface Props {
   meshData: MeshData | null;
+  svgData: string | null;
+  previewMode: PreviewMode;
   isRendering: boolean;
   error: string | null;
 }
 
-export function PreviewPanel({ meshData, isRendering, error }: Props) {
+export function PreviewPanel({ meshData, svgData, previewMode, isRendering, error }: Props) {
+  const showSvg = previewMode === "svg" && svgData;
+  const showMesh = previewMode === "3d";
+  const hasContent = showSvg || (showMesh && meshData);
+
   return (
     <div style={{ flex: 1, position: "relative" }}>
-      <LabelViewer meshData={meshData} />
+      {showSvg ? (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "white",
+          }}
+          dangerouslySetInnerHTML={{ __html: svgData }}
+        />
+      ) : (
+        <LabelViewer meshData={meshData} />
+      )}
 
       {/* Status overlay */}
-      {(isRendering || error || !meshData) && (
+      {(isRendering || error || !hasContent) && (
         <div
           style={{
             position: "absolute",
