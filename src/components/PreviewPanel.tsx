@@ -26,8 +26,20 @@ export function PreviewPanel({ meshData, svgData, previewMode, isRendering, erro
             alignItems: "center",
             justifyContent: "center",
             background: "white",
+            overflow: "hidden",
           }}
-          dangerouslySetInnerHTML={{ __html: svgData }}
+          ref={(el) => {
+            if (el) {
+              el.innerHTML = svgData;
+              const svg = el.querySelector("svg");
+              if (svg) {
+                svg.style.maxWidth = "50%";
+                svg.style.maxHeight = "50%";
+                svg.removeAttribute("width");
+                svg.removeAttribute("height");
+              }
+            }
+          }}
         />
       ) : (
         <LabelViewer meshData={meshData} />

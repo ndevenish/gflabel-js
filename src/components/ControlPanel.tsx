@@ -34,6 +34,7 @@ export function ControlPanel({
   const [spec, setSpec] = React.useState("{nut}M3");
   const [style, setStyle] = React.useState<LabelStyle>(LabelStyle.EMBOSSED);
   const [workerReady, setWorkerReady] = React.useState(false);
+  const [autoRender, setAutoRender] = React.useState(true);
 
   // Initialize worker
   React.useEffect(() => {
@@ -95,20 +96,19 @@ export function ControlPanel({
   // Auto-render: debounced in SVG mode on input changes, immediate on mode switch
   const prevModeRef = React.useRef(previewMode);
   React.useEffect(() => {
-    if (!workerReady || !spec.trim()) return;
-
     const modeChanged = prevModeRef.current !== previewMode;
     prevModeRef.current = previewMode;
 
-    if (previewMode === "svg" || modeChanged) {
-      const delay = modeChanged ? 0 : 300;
-      const timer = setTimeout(() => {
-        doRenderRef.current();
-      }, delay);
-      return () => clearTimeout(timer);
-    }
+    if (!workerReady || !spec.trim()) return;
+    if (!autoRender && !modeChanged) return;
+
+    const delay = modeChanged ? 0 : previewMode === "svg" ? 300 : 600;
+    const timer = setTimeout(() => {
+      doRenderRef.current();
+    }, delay);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec, baseType, width, height, style, previewMode, workerReady]);
+  }, [spec, baseType, width, height, style, previewMode, workerReady, autoRender]);
 
   const handleRender = doRender;
 
@@ -157,6 +157,14 @@ export function ControlPanel({
       <div>
         <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
           Preview
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, marginBottom: 6, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={autoRender}
+            onChange={(e) => setAutoRender(e.target.checked)}
+          />
+          Auto re-render
         </label>
         <div
           style={{
