@@ -38,14 +38,14 @@ function LabelMesh({ meshData }: { meshData: MeshData }) {
         normals[t * 9 + 6 + c] = srcNorm[i2 * 3 + c]!;
       }
 
-      // Color by Z: faces with any vertex above z=0 are label (dark).
-      // This colors text tops and side walls but not the flat base at z=0.
-      const maxZ = Math.max(
-        srcPos[i0 * 3 + 2]!,
-        srcPos[i1 * 3 + 2]!,
-        srcPos[i2 * 3 + 2]!,
-      );
-      const isLabel = maxZ > 0.001;
+      // Color by Z: label faces are above z=0 (embossed) or below (debossed).
+      const z0 = srcPos[i0 * 3 + 2]!;
+      const z1 = srcPos[i1 * 3 + 2]!;
+      const z2 = srcPos[i2 * 3 + 2]!;
+      const isLabel =
+        meshData.style === "debossed"
+          ? Math.min(z0, z1, z2) < -0.001
+          : Math.max(z0, z1, z2) > 0.001;
       const color = isLabel ? LABEL_COLOR : BASE_COLOR;
 
       for (let v = 0; v < 3; v++) {

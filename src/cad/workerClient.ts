@@ -10,6 +10,7 @@ export interface MeshData {
   faces: Float32Array;
   normals: Float32Array;
   indices: Uint32Array;
+  style: string;
 }
 
 export interface FileData {
@@ -101,7 +102,7 @@ export async function renderLabel(params: {
     type: "RENDER",
     ...params,
   })) as { type: "MESH"; faces: Float32Array; normals: Float32Array; indices: Uint32Array };
-  return { faces: result.faces, normals: result.normals, indices: result.indices };
+  return { faces: result.faces, normals: result.normals, indices: result.indices, style: params.style };
 }
 
 /**
