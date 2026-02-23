@@ -43,7 +43,7 @@ export class LabelRenderer {
     const splitParts = spec.split(SPLIT_RE);
     // splitParts alternates: text, leftProp, rightProp, text, leftProp, rightProp, ...
     // Each group is (text, left?, right?)
-    const groupSize = 1 + (SPLIT_RE.source.match(/\(/g)?.length ?? 0);
+    const groupSize = 1 + (SPLIT_RE.source.match(/\((?!\?)/g)?.length ?? 0);
     const groups = batched(splitParts, groupSize);
 
     for (let gi = 0; gi < groups.length; gi++) {
