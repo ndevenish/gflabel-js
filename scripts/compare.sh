@@ -5,6 +5,7 @@
 CASES=(
   'pred "Basic Label"'
   'pred "{nut}M3"'
+  'pred "{nut}M3qq"'
   'pred "{washer}{...}M4"'
   'pred "{bolt(20)}\nM2x20"'
   'pred "{head(hex)}{...}M3" --width 1'
