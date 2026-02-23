@@ -38,14 +38,24 @@ function LabelMesh({ meshData }: { meshData: MeshData }) {
         normals[t * 9 + 6 + c] = srcNorm[i2 * 3 + c]!;
       }
 
-      // Color by Z: label faces are above z=0 (embossed) or below (debossed).
-      const z0 = srcPos[i0 * 3 + 2]!;
-      const z1 = srcPos[i1 * 3 + 2]!;
-      const z2 = srcPos[i2 * 3 + 2]!;
-      const isLabel =
-        meshData.style === "debossed"
-          ? Math.min(z0, z1, z2) < -0.001
-          : Math.max(z0, z1, z2) > 0.001;
+      // Color by style:
+      // - Embossed: label faces have any vertex above z=0
+      // - Debossed: label faces have any vertex below z=0
+      // - Embedded: label is the second body in compound (after baseTriangleCount)
+      let isLabel: boolean;
+      if (meshData.style === "embedded" && meshData.baseTriangleCount != null) {
+        isLabel = t >= meshData.baseTriangleCount;
+      } else if (meshData.style === "debossed") {
+        const minZ = Math.min(
+          srcPos[i0 * 3 + 2]!, srcPos[i1 * 3 + 2]!, srcPos[i2 * 3 + 2]!,
+        );
+        isLabel = minZ < -0.001;
+      } else {
+        const maxZ = Math.max(
+          srcPos[i0 * 3 + 2]!, srcPos[i1 * 3 + 2]!, srcPos[i2 * 3 + 2]!,
+        );
+        isLabel = maxZ > 0.001;
+      }
       const color = isLabel ? LABEL_COLOR : BASE_COLOR;
 
       for (let v = 0; v < 3; v++) {

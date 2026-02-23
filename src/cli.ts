@@ -123,7 +123,7 @@ async function main() {
   }
 
   // Extrude and combine
-  const solid = extrudeLabel(baseResult, labelDrawing, style, depth);
+  const { solid } = extrudeLabel(baseResult, labelDrawing, style, depth);
 
   // Export
   const outputPath = resolve(opts.output);

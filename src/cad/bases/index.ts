@@ -28,22 +28,28 @@ export function buildBase(config: BaseConfig): LabelBaseResult {
  * - Embedded: label at z=0, extrude up by +depth, returned as separate compound
  *   (not fused to base — allows different colors in slicers)
  */
+export interface ExtrudeResult {
+  solid: Solid;
+  /** For embedded: number of triangles belonging to the base (first body in compound) */
+  baseTriangleCount?: number;
+}
+
 export function extrudeLabel(
   baseResult: LabelBaseResult,
   labelDrawing: import("replicad").Drawing,
   style: LabelStyle,
   depth: number = 0.4,
-): Solid {
+): ExtrudeResult {
   const { solid } = baseResult;
 
   if (style === LabelStyle.EMBOSSED) {
     // Raised text fused onto base surface
     const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(depth) as Solid;
-    return solid ? solid.fuse(labelSolid) : labelSolid;
+    return { solid: solid ? solid.fuse(labelSolid) : labelSolid };
   } else if (style === LabelStyle.DEBOSSED) {
     // Text cut into base surface
     const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
-    return solid ? solid.cut(labelSolid) : labelSolid;
+    return { solid: solid ? solid.cut(labelSolid) : labelSolid };
   } else {
     // EMBEDDED: flush label for multi-color printing.
     // Cut the label shape down into the base, then fill the void with
@@ -52,10 +58,14 @@ export function extrudeLabel(
     const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
     if (solid) {
       const baseCut = solid.cut(labelSolid);
+      // Count base triangles before combining so preview can color them differently
+      const baseMesh = baseCut.mesh({ tolerance: 0.05, angularTolerance: 5 });
+      const baseTriangleCount = baseMesh.triangles.length / 3;
       // Combine as compound (separate bodies) so slicer can assign different colors
-      return compoundShapes([baseCut, labelSolid]) as unknown as Solid;
+      const compound = compoundShapes([baseCut, labelSolid]) as unknown as Solid;
+      return { solid: compound, baseTriangleCount };
     }
-    return labelSolid;
+    return { solid: labelSolid };
   }
 }
 

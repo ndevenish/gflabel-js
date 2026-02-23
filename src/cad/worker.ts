@@ -50,6 +50,7 @@ interface MeshResponse {
   faces: Float32Array;
   normals: Float32Array;
   indices: Uint32Array;
+  baseTriangleCount?: number;
 }
 
 interface FileResponse {
@@ -130,16 +131,16 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       lastDrawing = labelDrawing;
 
       // Extrude label onto base
-      const solid = extrudeLabel(
+      const extrudeResult = extrudeLabel(
         baseResult,
         labelDrawing,
         req.style,
         req.base.depth ?? 0.4,
       );
-      lastSolid = solid;
+      lastSolid = extrudeResult.solid;
 
       // Generate mesh for preview
-      const mesh = solid.mesh({ tolerance: 0.05, angularTolerance: 5 });
+      const mesh = extrudeResult.solid.mesh({ tolerance: 0.05, angularTolerance: 5 });
       const faces = new Float32Array(mesh.vertices);
       const normals = new Float32Array(mesh.normals);
       const indices = new Uint32Array(mesh.triangles);
@@ -150,6 +151,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         faces,
         normals,
         indices,
+        baseTriangleCount: extrudeResult.baseTriangleCount,
       };
       self.postMessage(msg, { transfer: [faces.buffer, normals.buffer, indices.buffer] });
     } else if (req.type === "EXPORT") {
