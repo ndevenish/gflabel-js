@@ -148,14 +148,14 @@ export function ControlPanel({
         onHeightChange={setHeight}
       />
 
-      <div>
-        <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
           Style
         </label>
         <select
           value={style}
           onChange={(e) => setStyle(e.target.value as LabelStyle)}
-          style={{ width: "100%", padding: "6px 8px" }}
+          style={{ flex: 1, padding: "6px 8px" }}
         >
           <option value={LabelStyle.EMBOSSED}>Embossed</option>
           <option value={LabelStyle.DEBOSSED}>Debossed</option>
