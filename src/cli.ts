@@ -56,7 +56,7 @@ async function main() {
   program
     .name("gflabel-js")
     .description("Generate 3D-printable Gridfinity labels")
-    .argument("<base>", "Label base type (pred, plain)")
+    .argument("<base>", "Label base type (pred, plain, none, predbox, tailorbox, cullenect, modern)")
     .argument("<labels...>", "Label specifications")
     .option("-o, --output <file>", "Output file", "label.step")
     .option("-w, --width <n>", "Width (units for pred, mm for plain)", "1")
@@ -85,7 +85,7 @@ async function main() {
   const divisions = parseInt(opts.divisions, 10);
 
   const baseConfig = {
-    baseType: baseType as "pred" | "plain",
+    baseType: baseType as import("./cad/bases/base.js").BaseType,
     width,
     height,
     depth,

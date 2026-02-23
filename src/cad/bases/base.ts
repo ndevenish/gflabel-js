@@ -6,9 +6,18 @@ import type { Solid } from "replicad";
 import type { Vec2 } from "../label.js";
 import type { LabelStyle } from "../options.js";
 
+export type BaseType =
+  | "pred"
+  | "plain"
+  | "none"
+  | "predbox"
+  | "tailorbox"
+  | "cullenect"
+  | "modern";
+
 export interface BaseConfig {
-  baseType: "pred" | "plain";
-  /** Width in gridfinity units (for pred) or mm (for plain) */
+  baseType: BaseType;
+  /** Width in gridfinity units (for unit-based) or mm (for mm-based) */
   width: number;
   /** Height in mm (optional override) */
   height?: number;
@@ -27,4 +36,9 @@ export interface LabelBaseResult {
 export const DEFAULT_MARGINS: Record<string, number> = {
   pred: 0.4,
   plain: 0.2,
+  none: 0.2,
+  predbox: 3.0,
+  tailorbox: 3.0,
+  cullenect: 0.0,
+  modern: 0.2,
 };

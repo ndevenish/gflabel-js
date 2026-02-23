@@ -1,11 +1,45 @@
 import React from "react";
+import type { BaseType } from "../cad/bases/base.js";
 
 interface Props {
-  baseType: "pred" | "plain";
+  baseType: BaseType;
   width: number;
   height: number | undefined;
   onWidthChange: (w: number) => void;
   onHeightChange: (h: number | undefined) => void;
+}
+
+/** Whether this base type uses gridfinity units (vs raw mm) for width. */
+function usesUnits(bt: BaseType): boolean {
+  return bt === "pred" || bt === "predbox" || bt === "tailorbox" || bt === "cullenect" || bt === "modern";
+}
+
+function widthMin(bt: BaseType): number {
+  switch (bt) {
+    case "pred": return 1;
+    case "predbox": return 4;
+    case "tailorbox": return 5;
+    case "cullenect": return 1;
+    case "modern": return 3;
+    case "plain": return 10;
+    case "none": return 1;
+  }
+}
+
+function widthStep(bt: BaseType): number {
+  return usesUnits(bt) ? 1 : 5;
+}
+
+function defaultHeightPlaceholder(bt: BaseType): string {
+  switch (bt) {
+    case "pred": return "11.5";
+    case "plain": return "15";
+    case "none": return "15";
+    case "predbox": return "24.5";
+    case "tailorbox": return "24.8";
+    case "cullenect": return "11";
+    case "modern": return "22.1";
+  }
 }
 
 export function BaseSizeControls({
@@ -26,13 +60,13 @@ export function BaseSizeControls({
     <div style={{ display: "flex", gap: 8 }}>
       <div style={{ flex: 1 }}>
         <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
-          Width ({baseType === "pred" ? "units" : "mm"})
+          Width ({usesUnits(baseType) ? "units" : "mm"})
         </label>
         <input
           type="number"
           value={width}
-          min={baseType === "pred" ? 1 : 10}
-          step={baseType === "pred" ? 1 : 5}
+          min={widthMin(baseType)}
+          step={widthStep(baseType)}
           onChange={(e) => onWidthChange(Number(e.target.value))}
           style={inputStyle}
         />
@@ -44,7 +78,7 @@ export function BaseSizeControls({
         <input
           type="number"
           value={height ?? ""}
-          placeholder={baseType === "pred" ? "11.5" : "15"}
+          placeholder={defaultHeightPlaceholder(baseType)}
           min={5}
           step={0.5}
           onChange={(e) =>

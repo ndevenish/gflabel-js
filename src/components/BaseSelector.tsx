@@ -1,7 +1,19 @@
 
+import type { BaseType } from "../cad/bases/base.js";
+
+const BASE_TYPES: BaseType[] = [
+  "pred",
+  "plain",
+  "none",
+  "predbox",
+  "tailorbox",
+  "cullenect",
+  "modern",
+];
+
 interface Props {
-  value: "pred" | "plain";
-  onChange: (value: "pred" | "plain") => void;
+  value: BaseType;
+  onChange: (value: BaseType) => void;
 }
 
 export function BaseSelector({ value, onChange }: Props) {
@@ -10,8 +22,8 @@ export function BaseSelector({ value, onChange }: Props) {
       <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
         Base Type
       </label>
-      <div style={{ display: "flex", gap: 8 }}>
-        {(["pred", "plain"] as const).map((type) => (
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {BASE_TYPES.map((type) => (
           <label
             key={type}
             style={{

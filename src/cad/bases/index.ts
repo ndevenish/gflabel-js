@@ -6,6 +6,11 @@ import { compoundShapes, type Solid } from "replicad";
 import type { BaseConfig, LabelBaseResult } from "./base.js";
 import { buildPredBase } from "./pred.js";
 import { buildPlainBase } from "./plain.js";
+import { buildNoneBase } from "./none.js";
+import { buildPredboxBase } from "./predbox.js";
+import { buildTailorboxBase } from "./tailorbox.js";
+import { buildCullenectBase } from "./cullenect.js";
+import { buildModernBase } from "./modern.js";
 import { LabelStyle } from "../options.js";
 
 export function buildBase(config: BaseConfig): LabelBaseResult {
@@ -14,6 +19,16 @@ export function buildBase(config: BaseConfig): LabelBaseResult {
       return buildPredBase(config);
     case "plain":
       return buildPlainBase(config);
+    case "none":
+      return buildNoneBase(config);
+    case "predbox":
+      return buildPredboxBase(config);
+    case "tailorbox":
+      return buildTailorboxBase(config);
+    case "cullenect":
+      return buildCullenectBase(config);
+    case "modern":
+      return buildModernBase(config);
     default:
       throw new Error(`Unknown base type: ${config.baseType}`);
   }
@@ -69,5 +84,5 @@ export function extrudeLabel(
   }
 }
 
-export type { BaseConfig, LabelBaseResult } from "./base.js";
+export type { BaseConfig, BaseType, LabelBaseResult } from "./base.js";
 export { DEFAULT_MARGINS } from "./base.js";

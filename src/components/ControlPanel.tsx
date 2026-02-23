@@ -6,7 +6,7 @@ import { DownloadButtons } from "./DownloadButtons.js";
 import { renderLabel, ensureReady } from "../cad/workerClient.js";
 import type { MeshData } from "../cad/workerClient.js";
 import { LabelStyle } from "../cad/options.js";
-import type { BaseConfig } from "../cad/bases/base.js";
+import type { BaseConfig, BaseType } from "../cad/bases/base.js";
 
 interface Props {
   onMeshUpdate: (mesh: MeshData) => void;
@@ -21,7 +21,7 @@ export function ControlPanel({
   onRenderEnd,
   onError,
 }: Props) {
-  const [baseType, setBaseType] = React.useState<"pred" | "plain">("pred");
+  const [baseType, setBaseType] = React.useState<BaseType>("pred");
   const [width, setWidth] = React.useState(1);
   const [height, setHeight] = React.useState<number | undefined>(undefined);
   const [spec, setSpec] = React.useState("{nut}M3");
