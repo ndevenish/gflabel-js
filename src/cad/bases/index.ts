@@ -45,19 +45,18 @@ export function extrudeLabel(
     const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
     return solid ? solid.cut(labelSolid) : labelSolid;
   } else {
-    // EMBEDDED: label is a separate solid (not fused) for multi-color printing.
-    // Cut label shape from the base, then return the label solid.
-    // The slicer can assign different colors to the base vs label.
-    const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(depth) as Solid;
+    // EMBEDDED: flush label for multi-color printing.
+    // Cut the label shape down into the base, then fill the void with
+    // a separate label solid. The result is visually flat but the slicer
+    // can assign different colors to base vs label.
+    const cutSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
     if (solid) {
-      // Cut the label footprint from the base, then fuse the label back
-      // as a compound so they remain visually distinct parts
-      const baseCut = solid.cut(
-        labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid,
-      );
+      const baseCut = solid.cut(cutSolid);
+      // Fill the void with a label solid occupying the same space
+      const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
       return baseCut.fuse(labelSolid);
     }
-    return labelSolid;
+    return cutSolid;
   }
 }
 
