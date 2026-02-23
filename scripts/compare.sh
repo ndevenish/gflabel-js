@@ -8,6 +8,7 @@ CASES=(
   'pred "{washer}{...}M4"'
   'pred "{bolt(20)}\nM2x20"'
   'pred "{head(hex)}{...}M3" --width 1'
+  'pred "{nut}M3{|}a"'
   'plain "Hello" --width 40 --height 15'
 )
 
