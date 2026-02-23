@@ -8,7 +8,10 @@ interface ManifestEntry {
   category: string;
 }
 
-const manifest: ManifestEntry[] = manifestData;
+const manifest: ManifestEntry[] = manifestData.map((e) => ({
+  ...e,
+  category: e.category === "Hardware" ? "Hardware" : "Electronic Symbols",
+}));
 
 // Eagerly import all fragment SVGs via Vite glob — returns { path: url }
 const svgModules = import.meta.glob<string>(
@@ -18,7 +21,6 @@ const svgModules = import.meta.glob<string>(
 
 /** Resolve a manifest entry's name to its Vite-processed SVG URL. */
 function svgUrl(name: string): string | undefined {
-  // Glob keys are relative paths like "../assets/fragments/nut.svg"
   const key = `../assets/fragments/${name}.svg`;
   return svgModules[key];
 }
@@ -35,15 +37,22 @@ const CATEGORIES: string[] = [];
   }
 }
 
+// Hardware is expanded by default, everything else collapsed
+const DEFAULT_EXPANDED = new Set(["Hardware"]);
+
 interface Props {
   insertAtCursorRef: React.RefObject<((text: string) => void) | null>;
 }
 
 export function FragmentPalette({ insertAtCursorRef }: Props) {
   const [filter, setFilter] = React.useState("");
+  const [expanded, setExpanded] = React.useState<Set<string>>(
+    () => new Set(DEFAULT_EXPANDED),
+  );
 
+  const isFiltering = filter.length > 0;
   const lowerFilter = filter.toLowerCase();
-  const filtered = lowerFilter
+  const filtered = isFiltering
     ? manifest.filter(
         (e) =>
           e.label.toLowerCase().includes(lowerFilter) ||
@@ -63,8 +72,17 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
     list.push(entry);
   }
 
+  const toggleCategory = (cat: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <label style={{ fontSize: 13, fontWeight: 600 }}>Fragments</label>
       <input
         type="text"
@@ -72,71 +90,100 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         style={{
-          padding: "6px 8px",
+          padding: "5px 8px",
           border: "1px solid #d1d5db",
           borderRadius: 4,
-          fontSize: 13,
+          fontSize: 12,
         }}
       />
       {CATEGORIES.map((cat) => {
         const entries = grouped.get(cat);
         if (!entries) return null;
+        // When filtering, force all matching categories open
+        const isOpen = isFiltering || expanded.has(cat);
         return (
           <div key={cat}>
-            <div
+            <button
+              onClick={() => toggleCategory(cat)}
               style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                width: "100%",
+                padding: "3px 0",
+                border: "none",
+                background: "none",
+                cursor: "pointer",
                 fontSize: 11,
                 fontWeight: 600,
                 color: "#6b7280",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
-                marginBottom: 4,
               }}
             >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: 12,
+                  textAlign: "center",
+                  transition: "transform 0.15s",
+                  transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
+                  fontSize: 10,
+                }}
+              >
+                &#9654;
+              </span>
               {cat}
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
-                gap: 4,
-              }}
-            >
-              {entries.map((frag) => {
-                const url = svgUrl(frag.name);
-                return (
-                  <button
-                    key={frag.name}
-                    title={frag.label}
-                    onClick={() => insertAtCursorRef.current?.(frag.spec)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "100%",
-                      aspectRatio: "1",
-                      padding: 6,
-                      border: "1px solid #d1d5db",
-                      borderRadius: 6,
-                      background: "#f9fafb",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {url ? (
-                      <img
-                        src={url}
-                        alt={frag.label}
-                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                      />
-                    ) : (
-                      <span style={{ fontSize: 9, color: "#9ca3af" }}>
-                        {frag.name.slice(0, 4)}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+              <span style={{ fontWeight: 400, color: "#9ca3af", marginLeft: 2 }}>
+                {entries.length}
+              </span>
+            </button>
+            {isOpen && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(36px, 1fr))",
+                  gap: 3,
+                  paddingTop: 2,
+                  paddingBottom: 4,
+                }}
+              >
+                {entries.map((frag) => {
+                  const url = svgUrl(frag.name);
+                  return (
+                    <button
+                      key={frag.name}
+                      title={frag.label}
+                      onClick={() => insertAtCursorRef.current?.(frag.spec)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "100%",
+                        aspectRatio: "1",
+                        padding: 4,
+                        border: "1px solid #d1d5db",
+                        borderRadius: 4,
+                        background: "#f9fafb",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {url ? (
+                        <img
+                          src={url}
+                          alt={frag.label}
+                          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: 8, color: "#9ca3af" }}>
+                          {frag.name.slice(0, 4)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
