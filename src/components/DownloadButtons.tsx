@@ -1,12 +1,17 @@
 import React from "react";
 import { exportFile } from "../cad/workerClient.js";
 
-export function DownloadButtons() {
+interface Props {
+  onEnsureRendered: () => Promise<void>;
+}
+
+export function DownloadButtons({ onEnsureRendered }: Props) {
   const [exporting, setExporting] = React.useState(false);
 
   const handleExport = async (format: "stl" | "step" | "svg") => {
     setExporting(true);
     try {
+      await onEnsureRendered();
       const file = await exportFile(format);
       const blob = new Blob([file.buffer], { type: file.mimeType });
       const url = URL.createObjectURL(blob);

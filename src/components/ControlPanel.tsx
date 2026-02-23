@@ -88,6 +88,13 @@ export function ControlPanel({
     onError,
   ]);
 
+  // Ensure the worker has a 3D solid (needed before export).
+  const ensureRendered3D = React.useCallback(async () => {
+    if (!workerReady || !spec.trim()) return;
+    const baseConfig: BaseConfig = { baseType, width, height };
+    await renderLabel({ spec, base: baseConfig, style });
+  }, [workerReady, spec, baseType, width, height, style]);
+
   // Keep a stable ref to doRender so the debounce effect doesn't re-trigger
   // when callback identity changes.
   const doRenderRef = React.useRef(doRender);
@@ -212,7 +219,7 @@ export function ControlPanel({
         {workerReady ? "Render" : "Loading WASM..."}
       </button>
 
-      <DownloadButtons />
+      <DownloadButtons onEnsureRendered={ensureRendered3D} />
     </div>
   );
 }
