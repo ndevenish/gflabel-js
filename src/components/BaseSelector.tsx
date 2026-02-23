@@ -13,6 +13,16 @@ const BASE_TYPES: BaseType[] = [
 
 const WIP_TYPES: Set<BaseType> = new Set(["modern"]);
 
+const LABELS: Record<BaseType, string> = {
+  pred: "Pred",
+  plain: "Plain",
+  none: "None",
+  predbox: "Predbox",
+  tailorbox: "Tailorbox",
+  cullenect: "Cullenect",
+  modern: "Modern",
+};
+
 interface Props {
   value: BaseType;
   onChange: (value: BaseType) => void;
@@ -20,36 +30,21 @@ interface Props {
 
 export function BaseSelector({ value, onChange }: Props) {
   return (
-    <div>
-      <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
         Base Type
       </label>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as BaseType)}
+        style={{ flex: 1, padding: "6px 8px" }}
+      >
         {BASE_TYPES.map((type) => (
-          <label
-            key={type}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              cursor: "pointer",
-              fontSize: 14,
-            }}
-          >
-            <input
-              type="radio"
-              name="baseType"
-              value={type}
-              checked={value === type}
-              onChange={() => onChange(type)}
-            />
-            {type.charAt(0).toUpperCase() + type.slice(1)}
-            {WIP_TYPES.has(type) && (
-              <span style={{ fontSize: 10, color: "#b45309", fontWeight: 600 }}> WIP</span>
-            )}
-          </label>
+          <option key={type} value={type}>
+            {LABELS[type]}{WIP_TYPES.has(type) ? " (WIP)" : ""}
+          </option>
         ))}
-      </div>
+      </select>
     </div>
   );
 }

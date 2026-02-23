@@ -1,6 +1,6 @@
 import React from "react";
 import { BaseSelector } from "./BaseSelector.js";
-import { BaseSizeControls } from "./BaseSizeControls.js";
+import { BaseSizeControls, defaultWidth } from "./BaseSizeControls.js";
 import { LabelSpecInput } from "./LabelSpecInput.js";
 import { DownloadButtons } from "./DownloadButtons.js";
 import { renderLabel, renderSVG, ensureReady } from "../cad/workerClient.js";
@@ -134,7 +134,11 @@ export function ControlPanel({
     >
       <h2 style={{ margin: 0, fontSize: 18 }}>GFLabel</h2>
 
-      <BaseSelector value={baseType} onChange={setBaseType} />
+      <BaseSelector value={baseType} onChange={(bt) => {
+        setBaseType(bt);
+        setWidth(defaultWidth(bt));
+        setHeight(undefined);
+      }} />
 
       <BaseSizeControls
         baseType={baseType}

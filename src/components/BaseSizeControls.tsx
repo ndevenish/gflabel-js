@@ -14,7 +14,7 @@ function usesUnits(bt: BaseType): boolean {
   return bt === "pred" || bt === "predbox" || bt === "tailorbox" || bt === "cullenect" || bt === "modern";
 }
 
-function widthMin(bt: BaseType): number {
+export function defaultWidth(bt: BaseType): number {
   switch (bt) {
     case "pred": return 1;
     case "predbox": return 4;
@@ -65,7 +65,7 @@ export function BaseSizeControls({
         <input
           type="number"
           value={width}
-          min={widthMin(baseType)}
+          min={defaultWidth(baseType)}
           step={widthStep(baseType)}
           onChange={(e) => onWidthChange(Number(e.target.value))}
           style={inputStyle}
