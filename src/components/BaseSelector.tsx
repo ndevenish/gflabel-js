@@ -11,6 +11,8 @@ const BASE_TYPES: BaseType[] = [
   "modern",
 ];
 
+const WIP_TYPES: Set<BaseType> = new Set(["modern"]);
+
 interface Props {
   value: BaseType;
   onChange: (value: BaseType) => void;
@@ -42,6 +44,9 @@ export function BaseSelector({ value, onChange }: Props) {
               onChange={() => onChange(type)}
             />
             {type.charAt(0).toUpperCase() + type.slice(1)}
+            {WIP_TYPES.has(type) && (
+              <span style={{ fontSize: 10, color: "#b45309", fontWeight: 600 }}> WIP</span>
+            )}
           </label>
         ))}
       </div>

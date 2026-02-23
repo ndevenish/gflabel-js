@@ -84,23 +84,29 @@ export function buildModernBase(config: BaseConfig): LabelBaseResult {
   const bottomHalf = innerSketchBottom.loftWith(bottomSketch, { ruled: true }) as unknown as Solid;
   let solid = topHalf.fuse(bottomHalf);
 
-  // Flat base box at bottom edge
+  // Flat base box at bottom edge: W_mm × depth(Y) × depth(Z)
+  // Python: Box(W_mm, depth, depth) centered at (0, -H_mm/2, -depth/2)
+  // → spans Y: [-hMm/2 - depth/2, -hMm/2 + depth/2], Z: [-depth, 0]
+  // We draw on XY (W_mm × depth), sketch at z=-depth/2, extrude ±depth/2
   const baseBox = drawRectangle(wMm, depth)
     .sketchOnPlane("XY", -depth / 2)
-    .extrude(depth) as Solid;
-  // Translate to bottom of label
-  const baseBoxPositioned = baseBox.translate([0, -hMm / 2, -depth]) as unknown as Solid;
+    .extrude(depth / 2) as Solid;
+  const baseBox2 = drawRectangle(wMm, depth)
+    .sketchOnPlane("XY", -depth / 2)
+    .extrude(-depth / 2) as Solid;
+  let baseBoxSolid = baseBox.fuse(baseBox2);
+  // Translate so Y-center is at -hMm/2
+  baseBoxSolid = baseBoxSolid.translate([0, -hMm / 2, 0]) as unknown as Solid;
 
-  // Chamfer the top Z-axis edges of the base box
+  // Chamfer the top Z-axis edges of the base box (at z=0)
   try {
-    const chamferedBox = baseBoxPositioned.chamfer(1.2, (e) =>
-      e.inPlane("XY", 0).inDirection("Z"),
+    baseBoxSolid = baseBoxSolid.chamfer(1.2, (e) =>
+      e.inPlane("XY", 0),
     ) as unknown as Solid;
-    solid = solid.fuse(chamferedBox);
   } catch {
-    // Chamfer may fail; fuse without
-    solid = solid.fuse(baseBoxPositioned);
+    // Chamfer may fail
   }
+  solid = solid.fuse(baseBoxSolid);
 
   // Indent slot cut
   const indentW = wMm - 15.8 + 0.3;
