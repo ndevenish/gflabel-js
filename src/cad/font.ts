@@ -323,21 +323,21 @@ export function glyphsToDrawing(text: string, sizeMm: number): Drawing {
 export function drawingToFilledSVG(drawing: Drawing): string {
   const vb = drawing.toSVGViewBox();
   const paths = drawing.toSVGPaths();
-  // toSVGPaths returns string[][] — groups of path d-strings per face
-  const pathElements: string[] = [];
+  // toSVGPaths returns string[][] — groups of path d-strings per face.
+  // Flatten all d-strings into a single <path> with fill-rule="evenodd"
+  // so that contained sub-faces render as holes (e.g. fuse-ieee symbol
+  // where boolean cuts fail due to shared edges).
+  const allD: string[] = [];
   for (const entry of paths) {
     const group = Array.isArray(entry) ? entry : [entry];
-    if (group.length === 1) {
-      pathElements.push(`<path d="${group[0]}" />`);
-    } else {
-      // Combine outer + hole paths into one path with even-odd fill rule
-      // so inner contours render as transparent holes
-      const combined = group.join(" ");
-      pathElements.push(`<path fill-rule="evenodd" d="${combined}" />`);
-    }
+    allD.push(...group);
   }
+  const pathEl =
+    allD.length === 1
+      ? `<path d="${allD[0]}" />`
+      : `<path fill-rule="evenodd" d="${allD.join(" ")}" />`;
   return `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" fill="black" stroke="none">
-    ${pathElements.join("\n    ")}
+    ${pathEl}
 </svg>`;
 }
 
