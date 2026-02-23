@@ -2,7 +2,7 @@
  * Base geometry entry point.
  */
 
-import type { Solid } from "replicad";
+import { compoundShapes, type Solid } from "replicad";
 import type { BaseConfig, LabelBaseResult } from "./base.js";
 import { buildPredBase } from "./pred.js";
 import { buildPlainBase } from "./plain.js";
@@ -49,14 +49,13 @@ export function extrudeLabel(
     // Cut the label shape down into the base, then fill the void with
     // a separate label solid. The result is visually flat but the slicer
     // can assign different colors to base vs label.
-    const cutSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
+    const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
     if (solid) {
-      const baseCut = solid.cut(cutSolid);
-      // Fill the void with a label solid occupying the same space
-      const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
-      return baseCut.fuse(labelSolid);
+      const baseCut = solid.cut(labelSolid);
+      // Combine as compound (separate bodies) so slicer can assign different colors
+      return compoundShapes([baseCut, labelSolid]) as unknown as Solid;
     }
-    return cutSolid;
+    return labelSolid;
   }
 }
 
