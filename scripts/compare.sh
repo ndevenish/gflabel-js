@@ -11,6 +11,9 @@ CASES=(
   'pred "{head(hex)}{...}M3" --width 1'
   'pred "{nut}M3{|}a"'
   'plain "Hello" --width 40 --height 15'
+  'pred "{variable_resistor}"'
+  'pred "{sym(resistor)}"'
+  'pred "{sym(capacitor,iec)}"'
 )
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

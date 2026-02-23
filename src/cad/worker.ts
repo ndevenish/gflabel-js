@@ -10,7 +10,9 @@ import opencascade from "replicad-opencascadejs/src/replicad_single.js";
 import wasmUrl from "replicad-opencascadejs/src/replicad_single.wasm?url";
 
 import fontUrl from "../assets/OpenSans-Regular.ttf?url";
+import symbolsZipUrl from "../assets/chris-pikul-symbols.zip?url";
 import { loadFont } from "./font.js";
+import { loadSymbolsZip } from "./fragments/symbols.js";
 import { LabelRenderer, renderDividedLabel } from "./label.js";
 import { buildBase, extrudeLabel } from "./bases/index.js";
 import type { BaseConfig } from "./bases/index.js";
@@ -104,6 +106,11 @@ async function init(): Promise<void> {
   const fontResponse = await fetch(fontUrl);
   const fontData = await fontResponse.arrayBuffer();
   await loadFont(fontData);
+
+  // Load symbol ZIP
+  const zipResponse = await fetch(symbolsZipUrl);
+  const zipData = await zipResponse.arrayBuffer();
+  loadSymbolsZip(new Uint8Array(zipData));
 
   const msg: ReadyResponse = { type: "READY" };
   self.postMessage(msg);

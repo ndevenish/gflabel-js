@@ -14,6 +14,7 @@ import { SplitterFragment, SPLIT_RE } from "./layout.js";
 import "./spacer.js";
 import "./hardware.js";
 import "./layout.js";
+import "./symbols.js";
 
 // ── Spec parsing regex ──────────────────────────────────────────
 

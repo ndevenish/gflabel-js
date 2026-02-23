@@ -780,5 +780,110 @@ registerFragment(["threaded_insert"], () => {
   })();
 });
 
+// ── Variable Resistor Fragment ──────────────────────────────
+
+registerFragment(["variable_resistor"], () => {
+  return new (class extends Fragment {
+    overheight = 1.5;
+
+    render(
+      height: number,
+      _maxWidth: number,
+      _opts: RenderOptions,
+    ): FragmentRenderResult {
+      const t = 0.2; // half-thickness of lines
+      const w = 6.5; // body width
+      const h = 2; // body height
+      const lead = 6; // lead length from center
+
+      // Build resistor body as explicit polygon with inner cutout.
+      const bodyPts: [number, number][] = [
+        [-lead, -t],
+        [-lead, t],
+        [-w / 2 - t, t],
+        [-w / 2 - t, h / 2 + t],
+        [w / 2 + t, h / 2 + t],
+        [w / 2 + t, t],
+        [lead, t],
+        [lead, -t],
+        [w / 2 + t, -t],
+        [w / 2 + t, -h / 2 - t],
+        [-w / 2 - t, -h / 2 - t],
+        [-w / 2 - t, -t],
+      ];
+      const innerPts: [number, number][] = [
+        [-w / 2 + t, -h / 2 + t],
+        [-w / 2 + t, h / 2 - t],
+        [w / 2 - t, h / 2 - t],
+        [w / 2 - t, -h / 2 + t],
+      ];
+
+      let pen1 = draw(bodyPts[0]!);
+      for (let i = 1; i < bodyPts.length; i++) pen1 = pen1.lineTo(bodyPts[i]!);
+      let body: Drawing = pen1.close();
+
+      let pen2 = draw(innerPts[0]!);
+      for (let i = 1; i < innerPts.length; i++) pen2 = pen2.lineTo(innerPts[i]!);
+      body = body.cut(pen2.close());
+
+      // Arrow: single closed polygon for shaft + both arrowheads.
+      // Shaft is a vertical line of half-thickness t, with arrowheads at both ends.
+      // The entire shape is then rotated -30 degrees.
+      const lArr = 7;
+      const lHead = 1.5;
+      const angle = (30 * Math.PI) / 180;
+      const sinA = Math.sin(angle);
+      const cosA = Math.cos(angle);
+
+      // Shaft rectangle + two triangle arrowheads, fused together.
+      // Shaft rectangle
+      const shaftPts: [number, number][] = [
+        [t, -lArr / 2],
+        [t, lArr / 2],
+        [-t, lArr / 2],
+        [-t, -lArr / 2],
+      ];
+
+      // Top arrowhead triangle (pointing up-left)
+      const topArrowPts: [number, number][] = [
+        [0, lArr / 2 + t],                                           // tip extends slightly beyond shaft
+        [-sinA * lHead - cosA * t, lArr / 2 + t - cosA * lHead + sinA * t], // outer edge
+        [-sinA * lHead + cosA * t, lArr / 2 + t - cosA * lHead - sinA * t], // inner edge
+      ];
+
+      // Bottom arrowhead triangle (pointing down-right, mirror of top)
+      const botArrowPts: [number, number][] = topArrowPts.map(
+        ([x, y]) => [-x, -y] as [number, number],
+      );
+
+      // Helper to make a polygon Drawing from points
+      function makePoly(pts: [number, number][]): Drawing {
+        let p = draw(pts[0]!);
+        for (let j = 1; j < pts.length; j++) p = p.lineTo(pts[j]!);
+        return p.close();
+      }
+
+      let arrowDrawing = makePoly(shaftPts);
+      arrowDrawing = arrowDrawing.fuse(makePoly(topArrowPts));
+      arrowDrawing = arrowDrawing.fuse(makePoly(botArrowPts));
+
+      // Rotate -30 degrees and fuse with body
+      arrowDrawing = arrowDrawing.rotate(-30);
+      let drawing = body.fuse(arrowDrawing);
+
+      // Scale to fit height * 1.5
+      const bb = drawing.boundingBox;
+      const targetH = height * 1.5;
+      const scale = targetH / bb.height;
+      drawing = drawing.scale(scale);
+
+      return {
+        drawing,
+        width: drawing.boundingBox.width,
+      };
+    }
+  })();
+});
+
 // Export drive helpers for use elsewhere
 export { compoundDriveShape, driveShape, parseBoltFeatures };
