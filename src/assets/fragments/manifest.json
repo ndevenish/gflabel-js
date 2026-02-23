@@ -1,0 +1,746 @@
+[
+  {
+    "name": "nut",
+    "label": "Nut",
+    "spec": "{nut}",
+    "category": "Hardware"
+  },
+  {
+    "name": "washer",
+    "label": "Washer",
+    "spec": "{washer}",
+    "category": "Hardware"
+  },
+  {
+    "name": "lockwasher",
+    "label": "Lock Washer",
+    "spec": "{lockwasher}",
+    "category": "Hardware"
+  },
+  {
+    "name": "magnet",
+    "label": "Magnet",
+    "spec": "{magnet}",
+    "category": "Hardware"
+  },
+  {
+    "name": "threaded_insert",
+    "label": "Threaded Insert",
+    "spec": "{threaded_insert}",
+    "category": "Hardware"
+  },
+  {
+    "name": "tnut",
+    "label": "T-Nut",
+    "spec": "{tnut}",
+    "category": "Hardware"
+  },
+  {
+    "name": "circle",
+    "label": "Circle",
+    "spec": "{circle}",
+    "category": "Hardware"
+  },
+  {
+    "name": "variable_resistor",
+    "label": "Variable Resistor",
+    "spec": "{variable_resistor}",
+    "category": "Hardware"
+  },
+  {
+    "name": "nut_profile",
+    "label": "Nut Profile",
+    "spec": "{nut_profile}",
+    "category": "Hardware"
+  },
+  {
+    "name": "locknut_profile",
+    "label": "Lock Nut Profile",
+    "spec": "{locknut_profile}",
+    "category": "Hardware"
+  },
+  {
+    "name": "sym-antenna-com-loop",
+    "label": "Looped Antenna",
+    "spec": "{sym(antenna-com-loop)}",
+    "category": "Antenna"
+  },
+  {
+    "name": "sym-antenna-com-dipole",
+    "label": "Dipole Antenna",
+    "spec": "{sym(antenna-com-dipole)}",
+    "category": "Antenna"
+  },
+  {
+    "name": "sym-antenna-com-aerial",
+    "label": "Aerial Antenna",
+    "spec": "{sym(antenna-com-aerial)}",
+    "category": "Antenna"
+  },
+  {
+    "name": "sym-audio-ieee-microphone",
+    "label": "Microphone (IEEE)",
+    "spec": "{sym(audio-ieee-microphone)}",
+    "category": "Audio"
+  },
+  {
+    "name": "sym-audio-iec-microphone",
+    "label": "Microphone (IEC)",
+    "spec": "{sym(audio-iec-microphone)}",
+    "category": "Audio"
+  },
+  {
+    "name": "sym-audio-com-loudspeaker",
+    "label": "Loudspeaker / Speaker",
+    "spec": "{sym(audio-com-loudspeaker)}",
+    "category": "Audio"
+  },
+  {
+    "name": "sym-audio-com-buzzer",
+    "label": "Buzzer",
+    "spec": "{sym(audio-com-buzzer)}",
+    "category": "Audio"
+  },
+  {
+    "name": "sym-capacitor-ieee-nonpolarized",
+    "label": "Capacitor (IEEE)",
+    "spec": "{sym(capacitor-ieee-nonpolarized)}",
+    "category": "Capacitor"
+  },
+  {
+    "name": "sym-capacitor-ieee-polarized",
+    "label": "Electrolytic Capacitor (IEEE)",
+    "spec": "{sym(capacitor-ieee-polarized)}",
+    "category": "Capacitor"
+  },
+  {
+    "name": "sym-capacitor-iec-nonpolarized",
+    "label": "Capacitor (IEC)",
+    "spec": "{sym(capacitor-iec-nonpolarized)}",
+    "category": "Capacitor"
+  },
+  {
+    "name": "sym-capacitor-iec-variable",
+    "label": "Variable Capacitor (IEC)",
+    "spec": "{sym(capacitor-iec-variable)}",
+    "category": "Capacitor"
+  },
+  {
+    "name": "sym-capacitor-iec-trimmer",
+    "label": "Trimmer Capacitor (IEC)",
+    "spec": "{sym(capacitor-iec-trimmer)}",
+    "category": "Capacitor"
+  },
+  {
+    "name": "sym-capacitor-iec-polarized",
+    "label": "Polarized Capacitor (IEC)",
+    "spec": "{sym(capacitor-iec-polarized)}",
+    "category": "Capacitor"
+  },
+  {
+    "name": "sym-capacitor-com-feedthrough",
+    "label": "Feedthrough Capacitor",
+    "spec": "{sym(capacitor-com-feedthrough)}",
+    "category": "Capacitor"
+  },
+  {
+    "name": "sym-diode-com-zener",
+    "label": "Zener Diode",
+    "spec": "{sym(diode-com-zener)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-diode-com-varicap",
+    "label": "Varicap Diode",
+    "spec": "{sym(diode-com-varicap)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-diode-com-tunnel",
+    "label": "Tunnel Diode",
+    "spec": "{sym(diode-com-tunnel)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-diode-com-shottky",
+    "label": "Shottky Diode",
+    "spec": "{sym(diode-com-shottky)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-diode-com-shockley",
+    "label": "Shockley Diode",
+    "spec": "{sym(diode-com-shockley)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-diode-com-photodiode",
+    "label": "Photodiode",
+    "spec": "{sym(diode-com-photodiode)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-diode-com-led",
+    "label": "LED",
+    "spec": "{sym(diode-com-led)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-diode-com-laser",
+    "label": "LASER Diode",
+    "spec": "{sym(diode-com-laser)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-diode-com-standard",
+    "label": "Standard Diode",
+    "spec": "{sym(diode-com-standard)}",
+    "category": "Diode"
+  },
+  {
+    "name": "sym-fuse-ieee-alt",
+    "label": "Fuse (IEEE)",
+    "spec": "{sym(fuse-ieee-alt)}",
+    "category": "Fuse"
+  },
+  {
+    "name": "sym-fuse-iec",
+    "label": "Fuse (IEC)",
+    "spec": "{sym(fuse-iec)}",
+    "category": "Fuse"
+  },
+  {
+    "name": "sym-fuse-ieee",
+    "label": "Fuse (IEEE)",
+    "spec": "{sym(fuse-ieee)}",
+    "category": "Fuse"
+  },
+  {
+    "name": "sym-ground-com-signal",
+    "label": "Digital/Signal Ground",
+    "spec": "{sym(ground-com-signal)}",
+    "category": "Ground"
+  },
+  {
+    "name": "sym-ground-com-general",
+    "label": "Common/Earth Ground",
+    "spec": "{sym(ground-com-general)}",
+    "category": "Ground"
+  },
+  {
+    "name": "sym-ground-com-chassis",
+    "label": "Chassis Ground",
+    "spec": "{sym(ground-com-chassis)}",
+    "category": "Ground"
+  },
+  {
+    "name": "sym-ic-com-schmitt",
+    "label": "Schmitt Trigger",
+    "spec": "{sym(ic-com-schmitt)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-schmitt-inverted",
+    "label": "Inverted Schmitt Trigger",
+    "spec": "{sym(ic-com-schmitt-inverted)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-opamp",
+    "label": "Operational Amplifier (OpAmp)",
+    "spec": "{sym(ic-com-opamp)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-comparator",
+    "label": "Comparator",
+    "spec": "{sym(ic-com-comparator)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-flipflop-clockedd",
+    "label": "Clocked-D Flip-Flop",
+    "spec": "{sym(ic-com-flipflop-clockedd)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-flipflop-clockedjk",
+    "label": "Clocked-JK Flip-Flop",
+    "spec": "{sym(ic-com-flipflop-clockedjk)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-flipflop-clockedt",
+    "label": "Clocked-T Flip-Flop",
+    "spec": "{sym(ic-com-flipflop-clockedt)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-flipflop-gatedd",
+    "label": "Gated-D Flip-Flop",
+    "spec": "{sym(ic-com-flipflop-gatedd)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-flipflop-gatedsr",
+    "label": "Gated-SR Flip-Flop",
+    "spec": "{sym(ic-com-flipflop-gatedsr)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-flipflop-simplesr",
+    "label": "Simple-SR Flip-Flop",
+    "spec": "{sym(ic-com-flipflop-simplesr)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-logic-buffer",
+    "label": "Buffer",
+    "spec": "{sym(ic-com-logic-buffer)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-logic-inverter",
+    "label": "Inverter (Inverted Buffer)",
+    "spec": "{sym(ic-com-logic-inverter)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-logic-and",
+    "label": "Logic AND",
+    "spec": "{sym(ic-com-logic-and)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-logic-nand",
+    "label": "Logic NAND",
+    "spec": "{sym(ic-com-logic-nand)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-logic-nor",
+    "label": "Logic NOR",
+    "spec": "{sym(ic-com-logic-nor)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-logic-or",
+    "label": "Logic OR",
+    "spec": "{sym(ic-com-logic-or)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-logic-xnor",
+    "label": "Logic XNOR",
+    "spec": "{sym(ic-com-logic-xnor)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-ic-com-logic-xor",
+    "label": "Logic XOR",
+    "spec": "{sym(ic-com-logic-xor)}",
+    "category": "Ic"
+  },
+  {
+    "name": "sym-inductor-com-variable",
+    "label": "Variable Inductor",
+    "spec": "{sym(inductor-com-variable)}",
+    "category": "Inductor"
+  },
+  {
+    "name": "sym-inductor-com-tapped",
+    "label": "Tapped Inductor",
+    "spec": "{sym(inductor-com-tapped)}",
+    "category": "Inductor"
+  },
+  {
+    "name": "sym-inductor-com-magnetic",
+    "label": "Inductor (Magnetic/Ferrite Core)",
+    "spec": "{sym(inductor-com-magnetic)}",
+    "category": "Inductor"
+  },
+  {
+    "name": "sym-inductor-com-ferrite-bead",
+    "label": "Ferrite Bead",
+    "spec": "{sym(inductor-com-ferrite-bead)}",
+    "category": "Inductor"
+  },
+  {
+    "name": "sym-inductor-com-air",
+    "label": "Inductor (Air-Core)",
+    "spec": "{sym(inductor-com-air)}",
+    "category": "Inductor"
+  },
+  {
+    "name": "sym-miscellaneous-com-probe_point",
+    "label": "Probe Point",
+    "spec": "{sym(miscellaneous-com-probe_point)}",
+    "category": "Miscellaneous"
+  },
+  {
+    "name": "sym-miscellaneous-com-optocoupler",
+    "label": "Optocoupler",
+    "spec": "{sym(miscellaneous-com-optocoupler)}",
+    "category": "Miscellaneous"
+  },
+  {
+    "name": "sym-miscellaneous-com-lamp-indicator",
+    "label": "Indicator Lamp",
+    "spec": "{sym(miscellaneous-com-lamp-indicator)}",
+    "category": "Miscellaneous"
+  },
+  {
+    "name": "sym-miscellaneous-com-lamp-incandescent",
+    "label": "Incadecent Lamp",
+    "spec": "{sym(miscellaneous-com-lamp-incandescent)}",
+    "category": "Miscellaneous"
+  },
+  {
+    "name": "sym-miscellaneous-com-dac",
+    "label": "Digital-to-Analog (DTA) Converter",
+    "spec": "{sym(miscellaneous-com-dac)}",
+    "category": "Miscellaneous"
+  },
+  {
+    "name": "sym-miscellaneous-com-crystal_oscillator",
+    "label": "Crystal Oscillator",
+    "spec": "{sym(miscellaneous-com-crystal_oscillator)}",
+    "category": "Miscellaneous"
+  },
+  {
+    "name": "sym-miscellaneous-com-adc",
+    "label": "Analog-to-Digital (ATD) Converter",
+    "spec": "{sym(miscellaneous-com-adc)}",
+    "category": "Miscellaneous"
+  },
+  {
+    "name": "sym-relay-ieee-spst-no",
+    "label": "SPST Relay Normally-Open (IEEE)",
+    "spec": "{sym(relay-ieee-spst-no)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-relay-ieee-spst-nc",
+    "label": "SPST Relay Normally-Closed (IEEE)",
+    "spec": "{sym(relay-ieee-spst-nc)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-relay-ieee-spdt",
+    "label": "SPDT Relay (IEEE)",
+    "spec": "{sym(relay-ieee-spdt)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-relay-iec-spst-no",
+    "label": "SPST Relay Normally-Open (IEC)",
+    "spec": "{sym(relay-iec-spst-no)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-relay-iec-spst-nc",
+    "label": "SPST Relay Normally-Closed (IEC)",
+    "spec": "{sym(relay-iec-spst-nc)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-relay-iec-spdt",
+    "label": "SPDT Relay (IEC)",
+    "spec": "{sym(relay-iec-spdt)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-relay-com-com-spst-no",
+    "label": "SPST Relay Normally-Open (Common Style)",
+    "spec": "{sym(relay-com-com-spst-no)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-relay-com-com-spst-nc",
+    "label": "SPST Relay Normally-Closed (Common Style)",
+    "spec": "{sym(relay-com-com-spst-nc)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-relay-com-com-spdt",
+    "label": "SPDT Relay (Common Style)",
+    "spec": "{sym(relay-com-com-spdt)}",
+    "category": "Relay"
+  },
+  {
+    "name": "sym-resistor-com-memristor",
+    "label": "Memristor",
+    "spec": "{sym(resistor-com-memristor)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-ieee-standard",
+    "label": "Resistor (IEEE/ANSI) (IEEE)",
+    "spec": "{sym(resistor-ieee-standard)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-ieee-trimmer",
+    "label": "Trimmer / Trim-Pot (IEEE/ANSI) (IEEE)",
+    "spec": "{sym(resistor-ieee-trimmer)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-ieee-rheostat",
+    "label": "Rheostat / Variable Resistor (IEEE/ANSI) (IEEE)",
+    "spec": "{sym(resistor-ieee-rheostat)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-ieee-potentiometer",
+    "label": "Potentiometer (IEEE/ANSI) (IEEE)",
+    "spec": "{sym(resistor-ieee-potentiometer)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-ieee-photoresistor",
+    "label": "Photoresistor (IEEE/ANSI) (IEEE)",
+    "spec": "{sym(resistor-ieee-photoresistor)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-iec-standard",
+    "label": "Resistor (IEC)",
+    "spec": "{sym(resistor-iec-standard)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-iec-varistor",
+    "label": "Varistor (IEC)",
+    "spec": "{sym(resistor-iec-varistor)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-iec-trimmer",
+    "label": "Trimmer / Trim-Pot (IEC)",
+    "spec": "{sym(resistor-iec-trimmer)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-iec-thermistor",
+    "label": "Thermistor (IEC)",
+    "spec": "{sym(resistor-iec-thermistor)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-iec-rheostat",
+    "label": "Rheostat / Variable Resistor (IEC)",
+    "spec": "{sym(resistor-iec-rheostat)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-iec-potentiometer",
+    "label": "Potentiometer (IEC)",
+    "spec": "{sym(resistor-iec-potentiometer)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-iec-photoresistor",
+    "label": "Photoresistor (IEC)",
+    "spec": "{sym(resistor-iec-photoresistor)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-source-com-photovoltaic",
+    "label": "Photovoltaic Solar Cell",
+    "spec": "{sym(source-com-photovoltaic)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-dc",
+    "label": "DC Voltage Source",
+    "spec": "{sym(source-com-dc)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-dc-controlled",
+    "label": "Controlled DC Source",
+    "spec": "{sym(source-com-dc-controlled)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-current",
+    "label": "Current Source",
+    "spec": "{sym(source-com-current)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-current-controlled",
+    "label": "Controlled Current Source",
+    "spec": "{sym(source-com-current-controlled)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-battery-single",
+    "label": "Battery (Single Cell)",
+    "spec": "{sym(source-com-battery-single)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-battery-multiple",
+    "label": "Battery (Multiple Cells)",
+    "spec": "{sym(source-com-battery-multiple)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-ac",
+    "label": "AC Voltage Source",
+    "spec": "{sym(source-com-ac)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-square",
+    "label": "Square Wave Generator",
+    "spec": "{sym(source-com-square)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-source-com-triangle",
+    "label": "Triangle Wave Generator",
+    "spec": "{sym(source-com-triangle)}",
+    "category": "Source"
+  },
+  {
+    "name": "sym-switch-com-spst",
+    "label": "SPST Switch",
+    "spec": "{sym(switch-com-spst)}",
+    "category": "Switch"
+  },
+  {
+    "name": "sym-switch-com-spdt",
+    "label": "SPDT Switch",
+    "spec": "{sym(switch-com-spdt)}",
+    "category": "Switch"
+  },
+  {
+    "name": "sym-switch-com-dpst",
+    "label": "DPST Switch",
+    "spec": "{sym(switch-com-dpst)}",
+    "category": "Switch"
+  },
+  {
+    "name": "sym-switch-com-dpdt",
+    "label": "DPDT Switch",
+    "spec": "{sym(switch-com-dpdt)}",
+    "category": "Switch"
+  },
+  {
+    "name": "sym-switch-com-pushbutton-nc",
+    "label": "Pushbutton Normally-Closed",
+    "spec": "{sym(switch-com-pushbutton-nc)}",
+    "category": "Switch"
+  },
+  {
+    "name": "sym-switch-com-pushbutton-no",
+    "label": "Pushbutton Normally-Open",
+    "spec": "{sym(switch-com-pushbutton-no)}",
+    "category": "Switch"
+  },
+  {
+    "name": "sym-switch-com-pushbutton-two_circuit",
+    "label": "Pushbutton Two-Circuit",
+    "spec": "{sym(switch-com-pushbutton-two_circuit)}",
+    "category": "Switch"
+  },
+  {
+    "name": "sym-transformer-com-center",
+    "label": "Center-Tapped Transformer",
+    "spec": "{sym(transformer-com-center)}",
+    "category": "Transformer"
+  },
+  {
+    "name": "sym-transformer-com-center-double",
+    "label": "Double-Center-Tapped Transformer",
+    "spec": "{sym(transformer-com-center-double)}",
+    "category": "Transformer"
+  },
+  {
+    "name": "sym-transformer-com-standard",
+    "label": "Transformer",
+    "spec": "{sym(transformer-com-standard)}",
+    "category": "Transformer"
+  },
+  {
+    "name": "sym-transistor-com-phototransitor",
+    "label": "Phototransistor",
+    "spec": "{sym(transistor-com-phototransitor)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-jfet-p",
+    "label": "JFET-P",
+    "spec": "{sym(transistor-com-jfet-p)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-jfet-n",
+    "label": "JFET-N",
+    "spec": "{sym(transistor-com-jfet-n)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-darlington-pnp",
+    "label": "PNP Darlington Pair",
+    "spec": "{sym(transistor-com-darlington-pnp)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-darlington-npn",
+    "label": "NPN Darlington Pair",
+    "spec": "{sym(transistor-com-darlington-npn)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-bjt-pnp",
+    "label": "PNP Transistor",
+    "spec": "{sym(transistor-com-bjt-pnp)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-bjt-npn",
+    "label": "NPN Transistor",
+    "spec": "{sym(transistor-com-bjt-npn)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-mosfet-n",
+    "label": "N-Channel MOSFET",
+    "spec": "{sym(transistor-com-mosfet-n)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-mosfet-n-depletion",
+    "label": "N-Channel MOSFET in Depletion Mode",
+    "spec": "{sym(transistor-com-mosfet-n-depletion)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-mosfet-n-enhancement",
+    "label": "N-Channel MOSFET in Enhancement Mode",
+    "spec": "{sym(transistor-com-mosfet-n-enhancement)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-mosfet-p",
+    "label": "P-Channel MOSFET",
+    "spec": "{sym(transistor-com-mosfet-p)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-mosfet-p-depletion",
+    "label": "P-Channel MOSFET in Depletion Mode",
+    "spec": "{sym(transistor-com-mosfet-p-depletion)}",
+    "category": "Transistor"
+  },
+  {
+    "name": "sym-transistor-com-mosfet-p-enhancement",
+    "label": "P-Channel MOSFET in Enhancement Mode",
+    "spec": "{sym(transistor-com-mosfet-p-enhancement)}",
+    "category": "Transistor"
+  }
+]

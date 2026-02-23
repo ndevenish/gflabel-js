@@ -2,6 +2,7 @@ import React from "react";
 import { BaseSelector } from "./BaseSelector.js";
 import { BaseSizeControls, defaultWidth } from "./BaseSizeControls.js";
 import { LabelSpecInput } from "./LabelSpecInput.js";
+import { FragmentPalette } from "./FragmentPalette.js";
 import { DownloadButtons } from "./DownloadButtons.js";
 import { renderLabel, renderSVG, ensureReady } from "../cad/workerClient.js";
 import type { MeshData } from "../cad/workerClient.js";
@@ -124,106 +125,115 @@ export function ControlPanel({
       style={{
         width: 340,
         minWidth: 340,
-        padding: 16,
         borderRight: "1px solid #ddd",
-        overflowY: "auto",
         display: "flex",
         flexDirection: "column",
-        gap: 16,
+        height: "100%",
       }}
     >
-      <h2 style={{ margin: 0, fontSize: 18 }}>GFLabel</h2>
+      {/* Top zone: controls (shrink-to-fit) */}
+      <div style={{ padding: "16px 16px 0", display: "flex", flexDirection: "column", gap: 16, flexShrink: 0 }}>
+        <h2 style={{ margin: 0, fontSize: 18 }}>GFLabel</h2>
 
-      <BaseSelector value={baseType} onChange={(bt) => {
-        setBaseType(bt);
-        setWidth(defaultWidth(bt));
-        setHeight(undefined);
-      }} />
+        <BaseSelector value={baseType} onChange={(bt) => {
+          setBaseType(bt);
+          setWidth(defaultWidth(bt));
+          setHeight(undefined);
+        }} />
 
-      <BaseSizeControls
-        baseType={baseType}
-        width={width}
-        height={height}
-        onWidthChange={setWidth}
-        onHeightChange={setHeight}
-      />
+        <BaseSizeControls
+          baseType={baseType}
+          width={width}
+          height={height}
+          onWidthChange={setWidth}
+          onHeightChange={setHeight}
+        />
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
-          Style
-        </label>
-        <select
-          value={style}
-          onChange={(e) => setStyle(e.target.value as LabelStyle)}
-          style={{ flex: 1, padding: "6px 8px" }}
-        >
-          <option value={LabelStyle.EMBOSSED}>Embossed</option>
-          <option value={LabelStyle.DEBOSSED}>Debossed</option>
-          <option value={LabelStyle.EMBEDDED}>Embedded</option>
-        </select>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+            Style
+          </label>
+          <select
+            value={style}
+            onChange={(e) => setStyle(e.target.value as LabelStyle)}
+            style={{ flex: 1, padding: "6px 8px" }}
+          >
+            <option value={LabelStyle.EMBOSSED}>Embossed</option>
+            <option value={LabelStyle.DEBOSSED}>Debossed</option>
+            <option value={LabelStyle.EMBEDDED}>Embedded</option>
+          </select>
+        </div>
+
+        <LabelSpecInput value={spec} onChange={setSpec} insertAtCursorRef={insertAtCursorRef} />
       </div>
 
-      <LabelSpecInput value={spec} onChange={setSpec} insertAtCursorRef={insertAtCursorRef} />
+      {/* Middle zone: fragment palette (scrollable) */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px", minHeight: 0 }}>
+        <FragmentPalette insertAtCursorRef={insertAtCursorRef} />
+      </div>
 
-      <div>
-        <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
-          Preview
-        </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, marginBottom: 6, cursor: "pointer" }}>
-          <input
-            type="checkbox"
-            checked={autoRender}
-            onChange={(e) => setAutoRender(e.target.checked)}
-          />
-          Auto re-render
-        </label>
-        <div
+      {/* Bottom zone: preview + render + export (pinned) */}
+      <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 12, flexShrink: 0, borderTop: "1px solid #eee" }}>
+        <div style={{ paddingTop: 12 }}>
+          <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
+            Preview
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, marginBottom: 6, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={autoRender}
+              onChange={(e) => setAutoRender(e.target.checked)}
+            />
+            Auto re-render
+          </label>
+          <div
+            style={{
+              display: "flex",
+              borderRadius: 6,
+              overflow: "hidden",
+              border: "1px solid #d1d5db",
+            }}
+          >
+            {(["svg", "3d"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => onPreviewModeChange(mode)}
+                style={{
+                  flex: 1,
+                  padding: "6px 0",
+                  border: "none",
+                  background: previewMode === mode ? "#2563eb" : "#f3f4f6",
+                  color: previewMode === mode ? "white" : "#374151",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {mode.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          onClick={handleRender}
+          disabled={!workerReady || !spec.trim()}
           style={{
-            display: "flex",
+            padding: "10px 16px",
+            background: workerReady ? "#2563eb" : "#94a3b8",
+            color: "white",
+            border: "none",
             borderRadius: 6,
-            overflow: "hidden",
-            border: "1px solid #d1d5db",
+            cursor: workerReady ? "pointer" : "not-allowed",
+            fontSize: 14,
+            fontWeight: 600,
           }}
         >
-          {(["svg", "3d"] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => onPreviewModeChange(mode)}
-              style={{
-                flex: 1,
-                padding: "6px 0",
-                border: "none",
-                background: previewMode === mode ? "#2563eb" : "#f3f4f6",
-                color: previewMode === mode ? "white" : "#374151",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {mode.toUpperCase()}
-            </button>
-          ))}
-        </div>
+          {workerReady ? "Render" : "Loading WASM..."}
+        </button>
+
+        <DownloadButtons onEnsureRendered={ensureRendered3D} />
       </div>
-
-      <button
-        onClick={handleRender}
-        disabled={!workerReady || !spec.trim()}
-        style={{
-          padding: "10px 16px",
-          background: workerReady ? "#2563eb" : "#94a3b8",
-          color: "white",
-          border: "none",
-          borderRadius: 6,
-          cursor: workerReady ? "pointer" : "not-allowed",
-          fontSize: 14,
-          fontWeight: 600,
-        }}
-      >
-        {workerReady ? "Render" : "Loading WASM..."}
-      </button>
-
-      <DownloadButtons onEnsureRendered={ensureRendered3D} />
     </div>
   );
 }
