@@ -139,7 +139,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       lastSolid = solid;
 
       // Generate mesh for preview
-      const mesh = solid.mesh({ tolerance: 0.1, angularTolerance: 15 });
+      const mesh = solid.mesh({ tolerance: 0.05, angularTolerance: 5 });
       const faces = new Float32Array(mesh.vertices);
       const normals = new Float32Array(mesh.normals);
       const indices = new Uint32Array(mesh.triangles);
@@ -162,7 +162,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       let filename: string;
 
       if (req.format === "stl") {
-        const blob = lastSolid.blobSTL();
+        const blob = lastSolid.blobSTL({ tolerance: 0.05, angularTolerance: 5 });
         buffer = await blob.arrayBuffer();
         mimeType = "model/stl";
         filename = "label.stl";
