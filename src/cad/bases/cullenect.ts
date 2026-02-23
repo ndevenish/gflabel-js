@@ -70,14 +70,18 @@ export function buildCullenectBase(config: BaseConfig): LabelBaseResult {
       const ribSolid2 = rib.sketchOnPlane("XZ").extrude(-heightMm / 2) as Solid;
       ribSolid = ribSolid.fuse(ribSolid2);
 
-      // Fillet Z-axis edges
-      try {
-        ribSolid = ribSolid.fillet(0.5, (e) => e.inDirection("Z")) as unknown as Solid;
-      } catch {
-        // Fillet may fail
-      }
-
       solid = solid.cut(ribSolid);
+    }
+
+    // Fillet the Z-axis edges left by the rib cuts.
+    // Filter to short Z-axis edges near rib X positions (the cut creates
+    // Z-parallel edges with length < depth at each rib slot).
+    try {
+      solid = solid.fillet(0.5, (e) =>
+        e.inDirection("Z").ofLength((l) => l < depth),
+      ) as unknown as Solid;
+    } catch {
+      // Fillet may fail on complex topology
     }
   }
 
