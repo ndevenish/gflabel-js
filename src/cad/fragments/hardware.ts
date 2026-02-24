@@ -747,32 +747,75 @@ registerFragment(["threaded_insert"], () => {
       _maxWidth: number,
       _opts: RenderOptions,
     ): FragmentRenderResult {
-      // Simplified version of the insert shape
+      // Port of Python gflabel threaded_insert.
+      // Profile: polyline mirrored on both axes, plus bottom protrusion,
+      // with trapezoid cutouts on a 4×2 grid.
       const s = height / 10;
 
-      // Main body: T-shaped profile
-      const topRect = drawRectangle(8 * s, 2.5 * s);
-      const bottomRect = drawRectangle(6 * s, 5 * s).translate([0, 1.26 * s]);
-      let drawing = topRect
-        .fuse(bottomRect)
-        .translate([0, -1.25 * s]);
+      // Half-profile: (-3,0) → (-3,1.25) → (-4,1.25) → (-4,3.75) → (0,3.75)
+      // Mirrored on XZ then YZ gives the full outline: wide flanges at
+      // top/bottom (±4) with narrow neck (±3) in the middle.
+      const pts: [number, number][] = [
+        [-3, 0],
+        [-3, 1.25],
+        [-4, 1.25],
+        [-4, 3.75],
+        [4, 3.75],
+        [4, 1.25],
+        [3, 1.25],
+        [3, 0],
+        [3, -1.25],
+        [4, -1.25],
+        [4, -3.75],
+        [-4, -3.75],
+        [-4, -1.25],
+        [-3, -1.25],
+      ];
+      let pen = draw(pts[0]!.map((v) => v * s) as [number, number]);
+      for (let i = 1; i < pts.length; i++) {
+        pen = pen.lineTo(pts[i]!.map((v) => v * s) as [number, number]);
+      }
+      let drawing: Drawing = pen.close();
 
       // Bottom protrusion
-      const base = drawRectangle(6 * s, 2.5 * s).translate([0, -3.76 * s - 1.25 * s]);
+      const base = drawRectangle(6 * s, 2.5 * s).translate([
+        0,
+        (-3.76 - 2.5 / 2) * s,
+      ]);
       drawing = drawing.fuse(base);
 
-      // Trapezoid cutouts (simplified as rectangles)
+      // Trapezoid cutouts on a 1.625 × 5 grid, 4 columns × 2 rows
       for (let row = 0; row < 2; row++) {
         for (let col = 0; col < 4; col++) {
           const cx = (col - 1.5) * 1.625 * s;
-          const cy = (row === 0 ? 1 : -1) * 2.5 * s + (-1.25 * s);
-          const trap = drawRectangle(1.0 * s, 1.0 * s).translate([cx, cy]);
-          drawing = drawing.cut(trap);
+          const cy = (row === 0 ? 1 : -1) * 2.5 * s;
+          // Trapezoid: wider at top, narrower at bottom
+          const trapPts: [number, number][] = [
+            [-1.074, 0.65],
+            [-0.226, 0.65],
+            [1.074, -0.65],
+            [0.226, -0.65],
+          ];
+          let tp = draw(
+            trapPts[0]!.map((v, j) => v * s + (j === 0 ? cx : cy)) as [
+              number,
+              number,
+            ],
+          );
+          for (let i = 1; i < trapPts.length; i++) {
+            tp = tp.lineTo(
+              trapPts[i]!.map((v, j) => v * s + (j === 0 ? cx : cy)) as [
+                number,
+                number,
+              ],
+            );
+          }
+          drawing = drawing.cut(tp.close());
         }
       }
 
-      // Offset to center
-      drawing = drawing.translate([0, 2.5 * s / 2]);
+      // Offset to center vertically (matches Python's locate((0, 2.5/2)))
+      drawing = drawing.translate([0, (2.5 / 2) * s]);
 
       const bb = drawing.boundingBox;
       return { drawing, width: bb.width };

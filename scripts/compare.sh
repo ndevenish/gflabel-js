@@ -12,6 +12,7 @@ CASES=(
   'pred "{nut}M3{|}a"'
   'plain "Hello" --width 40 --height 15'
   'pred "{variable_resistor}"'
+  'pred "{threaded_insert}"'
   'pred "{sym(resistor)}"'
   'pred "{sym(capacitor,iec)}"'
 )
