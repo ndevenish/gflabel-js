@@ -483,21 +483,23 @@ function openRing(pts: [number, number][]): [number, number][] {
 /**
  * Parse an SVG string and convert all <path> elements to a single Drawing.
  *
- * All contours from all <path> elements are collected and processed
- * together through contoursToDrawing, which uses polygon-clipping for
- * boolean operations (union outers, subtract holes) at the polygon
- * level — bypassing OpenCascade 2D booleans that crash on near-tangent
- * intersections.
+ * Each <path> element is processed independently through contoursToDrawing
+ * (respecting per-path SVG fill semantics), then all per-path Drawings are
+ * fused together. This prevents holes in one path from subtracting geometry
+ * that belongs to a separate path (e.g. transistor body inside a circle ring).
  */
 export function svgToDrawing(svgString: string): Drawing {
   const pathRe = /<path[^>]*\bd="([^"]+)"/g;
   let m: RegExpExecArray | null;
 
-  const allContours: Contour[] = [];
+  let result: Drawing | null = null;
   while ((m = pathRe.exec(svgString)) !== null) {
-    allContours.push(...parseSvgPathD(m[1]!));
+    const contours = parseSvgPathD(m[1]!);
+    if (contours.length === 0) continue;
+    const drawing = contoursToDrawing(contours);
+    result = result ? result.fuse(drawing) : drawing;
   }
 
-  if (allContours.length === 0) return drawRectangle(0.001, 0.001);
-  return contoursToDrawing(allContours);
+  if (!result) return drawRectangle(0.001, 0.001);
+  return result;
 }
