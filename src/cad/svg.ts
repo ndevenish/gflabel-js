@@ -9,6 +9,7 @@
  */
 
 import { draw, Drawing, drawRectangle } from "replicad";
+import polygonClipping from "polygon-clipping";
 
 // ── Contour types ──────────────────────────────────────────────
 
@@ -357,25 +358,6 @@ function signedArea(points: [number, number][]): number {
   return area / 2;
 }
 
-function boundingBox(pts: [number, number][]): {
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
-} {
-  let minX = Infinity,
-    maxX = -Infinity,
-    minY = Infinity,
-    maxY = -Infinity;
-  for (const [x, y] of pts) {
-    if (x < minX) minX = x;
-    if (x > maxX) maxX = x;
-    if (y < minY) minY = y;
-    if (y > maxY) maxY = y;
-  }
-  return { minX, maxX, minY, maxY };
-}
-
 function contourToDrawing(points: [number, number][]): Drawing {
   const EPS = 1e-6;
   const filtered: [number, number][] = [points[0]!];
@@ -415,102 +397,97 @@ function contourToDrawing(points: [number, number][]): Drawing {
  */
 export function contoursToDrawing(contours: Contour[]): Drawing {
   if (contours.length === 0) return drawRectangle(0.001, 0.001);
+  if (contours.length === 1) return contourToDrawing(contours[0]!.points);
 
-  interface ContourInfo {
-    points: [number, number][];
-    drawing: Drawing;
-    area: number;
-    bb: { minX: number; maxX: number; minY: number; maxY: number };
-  }
-
-  const infos: ContourInfo[] = contours.map((c) => ({
-    points: c.points,
-    drawing: contourToDrawing(c.points),
-    area: signedArea(c.points),
-    bb: boundingBox(c.points),
-  }));
-
-  // The largest contour defines the outer winding direction
+  // Classify contours into outers vs holes by winding direction.
+  // The largest contour (by absolute area) defines the outer winding.
+  const areas = contours.map((c) => signedArea(c.points));
   let largestIdx = 0;
-  for (let i = 1; i < infos.length; i++) {
-    if (Math.abs(infos[i]!.area) > Math.abs(infos[largestIdx]!.area)) {
+  for (let i = 1; i < areas.length; i++) {
+    if (Math.abs(areas[i]!) > Math.abs(areas[largestIdx]!)) {
       largestIdx = i;
     }
   }
-  const outerSign = Math.sign(infos[largestIdx]!.area);
+  const outerSign = Math.sign(areas[largestIdx]!);
 
-  const outers: ContourInfo[] = [];
-  const holes: ContourInfo[] = [];
+  type Ring = [number, number][];
+  const outerRings: Ring[] = [];
+  const holeRings: Ring[] = [];
 
-  for (const info of infos) {
-    if (outerSign !== 0 && Math.sign(info.area) !== outerSign) {
-      holes.push(info);
+  for (let i = 0; i < contours.length; i++) {
+    if (outerSign !== 0 && Math.sign(areas[i]!) !== outerSign) {
+      holeRings.push(contours[i]!.points);
     } else {
-      outers.push(info);
+      outerRings.push(contours[i]!.points);
     }
   }
 
-  // Pair each hole with its smallest containing outer via bounding box
-  for (const hole of holes) {
-    const hbb = hole.bb;
-    let bestIdx = -1;
-    let bestArea = Infinity;
-
-    for (let i = 0; i < outers.length; i++) {
-      const obb = outers[i]!.bb;
-      if (
-        obb.minX <= hbb.minX + 0.01 &&
-        obb.maxX >= hbb.maxX - 0.01 &&
-        obb.minY <= hbb.minY + 0.01 &&
-        obb.maxY >= hbb.maxY - 0.01
-      ) {
-        const absArea = Math.abs(outers[i]!.area);
-        if (absArea < bestArea) {
-          bestArea = absArea;
-          bestIdx = i;
-        }
-      }
-    }
-    if (bestIdx >= 0) {
-      try {
-        outers[bestIdx]!.drawing = outers[bestIdx]!.drawing.cut(hole.drawing);
-      } catch {
-        // Boolean cut can fail on shared edges — skip this hole.
-        // It will still appear correct via evenodd fill in SVG output.
-      }
-    }
+  // Use polygon-clipping to compute the union of all outers, then
+  // subtract holes.  This bypasses OpenCascade 2D booleans entirely,
+  // avoiding crashes on near-tangent intersections.
+  type PC = [number, number][][];
+  let multiPoly: PC[] = outerRings.map((r) => [closeRing(r)]);
+  if (multiPoly.length > 1) {
+    multiPoly = polygonClipping.union(multiPoly[0]!, ...multiPoly.slice(1));
   }
 
-  // Fuse all outer contours (holes already cut).
-  // Wrap each fuse in try-catch: OpenCascade boolean ops can fail on
-  // near-tangent intersections.  On failure the contour is dropped —
-  // this loses small overlapping annotations but keeps the Drawing
-  // valid for 3D extrusion and downstream boolean operations.
+  if (holeRings.length > 0) {
+    // Pair each hole with its containing polygon via bounding box,
+    // then subtract.
+    const holePoly: PC[] = holeRings.map((r) => [closeRing(r)]);
+    multiPoly = polygonClipping.difference(
+      // Flatten into a single multipolygon for the subject
+      multiPoly as Parameters<typeof polygonClipping.difference>[0],
+      ...holePoly,
+    );
+  }
+
+  // Convert the resulting multipolygon back to Drawings.
+  // Each polygon in the result is an outer ring + optional hole rings.
   let result: Drawing | null = null;
-  for (const outer of outers) {
-    if (!result) {
-      result = outer.drawing;
-    } else {
-      try {
-        result = result.fuse(outer.drawing);
-      } catch {
-        // Skip unfusable contour
-      }
+  for (const polygon of multiPoly) {
+    const outerPts = openRing(polygon[0]!);
+    let drawing = contourToDrawing(outerPts);
+    // Cut hole rings
+    for (let h = 1; h < polygon.length; h++) {
+      const holePts = openRing(polygon[h]!);
+      drawing = drawing.cut(contourToDrawing(holePts));
     }
+    result = result ? result.fuse(drawing) : drawing;
   }
   return result ?? drawRectangle(0.001, 0.001);
+}
+
+/** Ensure a ring is closed (first point == last point) for polygon-clipping. */
+function closeRing(pts: [number, number][]): [number, number][] {
+  if (pts.length === 0) return pts;
+  const [fx, fy] = pts[0]!;
+  const [lx, ly] = pts[pts.length - 1]!;
+  if (Math.abs(fx - lx) > 1e-9 || Math.abs(fy - ly) > 1e-9) {
+    return [...pts, [fx, fy]];
+  }
+  return pts;
+}
+
+/** Remove closing duplicate point for contourToDrawing. */
+function openRing(pts: [number, number][]): [number, number][] {
+  if (pts.length < 2) return pts;
+  const [fx, fy] = pts[0]!;
+  const [lx, ly] = pts[pts.length - 1]!;
+  if (Math.abs(fx - lx) < 1e-9 && Math.abs(fy - ly) < 1e-9) {
+    return pts.slice(0, -1);
+  }
+  return pts;
 }
 
 /**
  * Parse an SVG string and convert all <path> elements to a single Drawing.
  *
  * All contours from all <path> elements are collected and processed
- * together through contoursToDrawing, which classifies outers vs holes
- * by winding direction and uses bounding-box containment for pairing.
- *
- * When OpenCascade boolean ops fail on near-tangent intersections
- * (e.g. zigzag resistor body crossed by diagonal arrow), the unfusable
- * contour is dropped to keep the Drawing valid for 3D extrusion.
+ * together through contoursToDrawing, which uses polygon-clipping for
+ * boolean operations (union outers, subtract holes) at the polygon
+ * level — bypassing OpenCascade 2D booleans that crash on near-tangent
+ * intersections.
  */
 export function svgToDrawing(svgString: string): Drawing {
   const pathRe = /<path[^>]*\bd="([^"]+)"/g;
