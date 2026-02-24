@@ -497,42 +497,78 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
             [hw, -lw / 2],
           ];
 
-      // Build the head profile points
-      const headTopX = -hw + lw;
-      const headBottomX = -hw + lw;
+      // Build the main body outline with head-shape-specific profile
+      const headX = -hw + lw; // x where head meets body
 
-      // Build the main body polygon
-      let bodyPoints: [number, number][];
-
+      // Body/thread points (right side of bolt)
+      let bodyRightPts: [number, number][];
       if (!splitBolt) {
-        bodyPoints = [
-          [-hw, headH],
-          [-hw, -headH],
-          [headBottomX, -headH],
-          [headBottomX, -lw / 2],
-          ...boltBottomPts.slice().reverse(),
-          [headTopX, lw / 2],
-          [headTopX, headH],
-        ];
+        bodyRightPts = [...boltBottomPts.slice().reverse()];
       } else {
         const xMid = lw + (maxSize - lw) / 2 - hw;
-        bodyPoints = [
-          [-hw, headH],
-          [-hw, -headH],
-          [headBottomX, -headH],
-          [headBottomX, -lw / 2],
+        bodyRightPts = [
           [xMid - lw / 2 - halfSplit, -lw / 2],
           [xMid + lw / 2 - halfSplit, lw / 2],
-          [headTopX, lw / 2],
-          [headTopX, headH],
         ];
       }
 
-      // Draw the body
-      let pen = draw(bodyPoints[0]!);
-      for (let i = 1; i < bodyPoints.length; i++) {
-        pen = pen.lineTo(bodyPoints[i]!);
+      // Draw using pen: start at head top-left, go CCW
+      let pen: ReturnType<typeof draw>;
+
+      if (headshape === "pan") {
+        // Rounded corners at head top-left and bottom-left
+        // Winding: CW — start top of head, go down left side
+        const r = Math.min(2, lw / 2);
+        pen = draw([-hw + r, headH]);
+        // Top-left arc: from (-hw+r, headH) curving to (-hw, headH-r)
+        pen = pen.threePointsArcTo(
+          [-hw, headH - r],
+          [-hw + r * (1 - Math.SQRT1_2), headH - r * (1 - Math.SQRT1_2)],
+        );
+        // Down the left side
+        pen = pen.lineTo([-hw, -headH + r]);
+        // Bottom-left arc: from (-hw, -headH+r) curving to (-hw+r, -headH)
+        pen = pen.threePointsArcTo(
+          [-hw + r, -headH],
+          [-hw + r * (1 - Math.SQRT1_2), -headH + r * (1 - Math.SQRT1_2)],
+        );
+        pen = pen.lineTo([headX, -headH]);
+        pen = pen.lineTo([headX, -lw / 2]);
+        for (const pt of bodyRightPts) pen = pen.lineTo(pt);
+        pen = pen.lineTo([headX, lw / 2]);
+        pen = pen.lineTo([headX, headH]);
+      } else if (headshape === "round") {
+        // Elliptical dome: CW winding — start at top, arc down the left side
+        pen = draw([headX, headH]);
+        pen = pen.ellipseTo(
+          [headX, -headH],
+          lw,
+          headH,
+          0,
+          true,
+          true,
+        );
+        pen = pen.lineTo([headX, -lw / 2]);
+        for (const pt of bodyRightPts) pen = pen.lineTo(pt);
+        pen = pen.lineTo([headX, lw / 2]);
+      } else if (headshape === "countersunk") {
+        // Tapered: wide at head (left), narrows to shaft width at body
+        pen = draw([-hw, headH]);
+        pen = pen.lineTo([-hw, -headH]);
+        pen = pen.lineTo([headX, -lw / 2]);
+        for (const pt of bodyRightPts) pen = pen.lineTo(pt);
+        pen = pen.lineTo([headX, lw / 2]);
+      } else {
+        // socket (default): straight rectangular head
+        pen = draw([-hw, headH]);
+        pen = pen.lineTo([-hw, -headH]);
+        pen = pen.lineTo([headX, -headH]);
+        pen = pen.lineTo([headX, -lw / 2]);
+        for (const pt of bodyRightPts) pen = pen.lineTo(pt);
+        pen = pen.lineTo([headX, lw / 2]);
+        pen = pen.lineTo([headX, headH]);
       }
+
       let drawing: Drawing = pen.close();
 
       // If split, draw the second half
@@ -634,56 +670,66 @@ registerFragment(
           ]);
         }
 
-        // Build the head connection point
-        let headConnectorY: number;
-        if (headshape === "pan") {
-          headConnectorY = h / 2;
-        } else if (headshape === "countersunk") {
-          headConnectorY = h / 2;
-        } else if (headshape === "socket") {
-          headConnectorY = h / 2;
-        } else {
-          headConnectorY = h / 2;
-        }
-
-        // Build the top profile: threads → head connection → head top → head front → center line
-        const topProfile: [number, number][] = [
-          ...threadLines,
-          [xHead, threadTipHeight - threadDepth],
-          [xHead, headConnectorY],
-        ];
-
-        // Add head shape
-        if (headshape === "pan") {
-          const headRadius = 2;
-          topProfile.push(
-            [width / 2 - headRadius, h / 2],
-            [width / 2, h / 2 - headRadius],
-          );
-          topProfile.push([width / 2, 0]);
-        } else if (headshape === "countersunk") {
-          topProfile.push([width / 2, h / 2], [width / 2, 0]);
-        } else if (headshape === "socket") {
-          topProfile.push(
-            [width / 2, h / 2],
-            [width / 2, 0],
-          );
-        } else {
-          topProfile.push([width / 2, h / 2], [width / 2, 0]);
-        }
-
-        // Mirror for bottom half
-        const bottomProfile = topProfile
+        // Build the full outline with pen-based drawing for arc support.
+        // Bottom half threads (Y negated)
+        const bottomThreadLines: [number, number][] = threadLines
           .slice()
           .reverse()
-          .map(([x, y]): [number, number] => [x, -y]);
+          .map(([x, y]) => [x, -y]);
 
-        const allPoints = [...topProfile, ...bottomProfile.slice(1)];
-
-        let pen2 = draw(allPoints[0]!);
-        for (let i = 1; i < allPoints.length; i++) {
-          pen2 = pen2.lineTo(allPoints[i]!);
+        // Start at first thread point (top), draw top threads → head → bottom threads
+        let pen2 = draw(threadLines[0]!);
+        for (let i = 1; i < threadLines.length; i++) {
+          pen2 = pen2.lineTo(threadLines[i]!);
         }
+        // Connect to head
+        pen2 = pen2.lineTo([xHead, threadTipHeight - threadDepth]);
+        pen2 = pen2.lineTo([xHead, h / 2]);
+
+        // Head shape (top-right to center-right to bottom-right)
+        if (headshape === "pan") {
+          const r = 2;
+          pen2 = pen2.lineTo([width / 2 - r, h / 2]);
+          pen2 = pen2.threePointsArcTo(
+            [width / 2, h / 2 - r],
+            [
+              width / 2 - r * (1 - Math.SQRT1_2),
+              h / 2 - r * (1 - Math.SQRT1_2),
+            ],
+          );
+          pen2 = pen2.lineTo([width / 2, -(h / 2 - r)]);
+          pen2 = pen2.threePointsArcTo(
+            [width / 2 - r, -h / 2],
+            [
+              width / 2 - r * (1 - Math.SQRT1_2),
+              -(h / 2 - r * (1 - Math.SQRT1_2)),
+            ],
+          );
+        } else if (headshape === "round") {
+          const xRoundHead = width / 2 - h / 2;
+          pen2 = pen2.lineTo([xRoundHead, h / 2]);
+          pen2 = pen2.threePointsArcTo(
+            [xRoundHead, -h / 2],
+            [xRoundHead + h / 2, 0],
+          );
+        } else if (headshape === "countersunk") {
+          pen2 = pen2.lineTo([width / 2, h / 2]);
+          pen2 = pen2.lineTo([width / 2, -h / 2]);
+        } else {
+          // socket
+          pen2 = pen2.lineTo([width / 2, h / 2]);
+          pen2 = pen2.lineTo([width / 2, -h / 2]);
+        }
+
+        // Connect back to bottom threads
+        pen2 = pen2.lineTo([xHead, -h / 2]);
+        pen2 = pen2.lineTo([xHead, -(threadTipHeight - threadDepth)]);
+
+        // Bottom half threads (reversed, Y negated)
+        for (let i = 1; i < bottomThreadLines.length; i++) {
+          pen2 = pen2.lineTo(bottomThreadLines[i]!);
+        }
+
         let drawing: Drawing = pen2.close();
 
         // Add drive cutout

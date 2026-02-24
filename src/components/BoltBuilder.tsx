@@ -20,14 +20,15 @@ const HEAD_SHAPES = [
   { id: "countersunk", label: "CSK" },
 ] as const;
 
+// "slot" is omitted: parseBoltFeatures consumes it as the "slotted" modifier.
+// "square" is omitted: FEATURE_ALIAS maps it to "socket" head shape.
+// Use the Slotted checkbox for the slot-head visual on bolts.
 const DRIVES = [
   { id: null as string | null, label: "None", icon: null },
   { id: "phillips", label: null, icon: "head-phillips" },
   { id: "pozidrive", label: null, icon: "head-pozidrive" },
-  { id: "slot", label: null, icon: "head-slot" },
   { id: "hex", label: null, icon: "head-hex" },
   { id: "cross", label: null, icon: "head-cross" },
-  { id: "square", label: null, icon: "head-square" },
   { id: "triangle", label: null, icon: "head-triangle" },
   { id: "torx", label: null, icon: "head-torx" },
 ];
@@ -140,7 +141,7 @@ export function BoltBuilder({ mode, insertAtCursorRef }: BoltBuilderProps) {
     setRendering(true);
     const timer = setTimeout(() => {
       renderSVG({
-        spec,
+        spec: spec,
         base: { baseType: "none", width: 40, height: 12 },
         style: LabelStyle.EMBOSSED,
       })
