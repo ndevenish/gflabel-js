@@ -89,8 +89,25 @@ function driveShape(
       .lineTo([s / 2, -(1 / 3) * h])
       .close();
   } else if (lower === "torx") {
-    // Simplified torx: circle with 6 lobes cut
+    // Torx: central circle + 3 stadium-shaped lobes, minus 6 circular cuts
     drawing = drawCircle(0.74 / 2);
+    // Add 3 radial slots (stadium shapes) at 120° intervals
+    // SlotCenterToCenter(0.82, 0.19) = 0.82 center-to-center, 0.19 diameter ends
+    const slotLen = 0.82;
+    const slotR = 0.19 / 2;
+    for (let i = 0; i < 3; i++) {
+      const angle = (i * 120) * (Math.PI / 180);
+      // Build a stadium (rectangle + two semicircle end caps)
+      const halfLen = slotLen / 2;
+      let slot: Drawing = drawRectangle(slotLen, slotR * 2);
+      slot = slot
+        .fuse(drawCircle(slotR).translate([halfLen, 0]))
+        .fuse(drawCircle(slotR).translate([-halfLen, 0]));
+      // Rotate to the correct angle
+      if (angle !== 0) slot = slot.rotate(i * 120);
+      drawing = drawing.fuse(slot);
+    }
+    // Cut 6 circular lobes at 30° offset
     for (let i = 0; i < 6; i++) {
       const angle = (i * 60 + 30) * (Math.PI / 180);
       const cx = 0.41 * Math.cos(angle);
