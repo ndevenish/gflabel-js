@@ -9,7 +9,7 @@ import { type Drawing } from "replicad";
 import type { RenderOptions } from "../options.js";
 import { Fragment, registerFragment } from "./base.js";
 import type { FragmentRenderResult } from "./base.js";
-import { svgToDrawing, type DrawingWithExtras } from "../svg.js";
+import { svgToDrawing } from "../svg.js";
 import { unzipSync } from "fflate";
 
 // ── Types ──────────────────────────────────────────────────────
@@ -256,20 +256,9 @@ registerFragment(["symbol", "sym"], (...selectors: string[]) => {
       // Center and scale to fit height
       let drawing: Drawing = symbolDrawing;
       const bb = drawing.boundingBox;
-      const tx = -bb.center[0];
-      const ty = -bb.center[1];
-      const s = height / bb.height;
-      drawing = drawing.translate([tx, ty]).scale(s);
-
-      // Propagate transforms to any extra drawings that couldn't be
-      // fused (OpenCascade boolean failures on near-tangent paths).
-      const srcExtras = (symbolDrawing as DrawingWithExtras)
-        .__extraDrawings;
-      if (srcExtras) {
-        (drawing as DrawingWithExtras).__extraDrawings = srcExtras.map(
-          (d) => d.translate([tx, ty]).scale(s),
-        );
-      }
+      drawing = drawing.translate([-bb.center[0], -bb.center[1]]);
+      const scale = height / bb.height;
+      drawing = drawing.scale(scale);
 
       return {
         drawing,

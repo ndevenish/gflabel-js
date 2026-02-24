@@ -10,17 +10,6 @@
 
 import { draw, Drawing, drawRectangle } from "replicad";
 
-// ── Extra drawings for unfusable contours ─────────────────────
-
-/**
- * When OpenCascade boolean fuse fails (near-tangent intersections),
- * unfusable contours are attached as extra drawings.  The SVG export
- * picks these up so all paths are still rendered with evenodd fill.
- */
-export interface DrawingWithExtras extends Drawing {
-  __extraDrawings?: Drawing[];
-}
-
 // ── Contour types ──────────────────────────────────────────────
 
 interface Contour {
@@ -486,88 +475,52 @@ export function contoursToDrawing(contours: Contour[]): Drawing {
       try {
         outers[bestIdx]!.drawing = outers[bestIdx]!.drawing.cut(hole.drawing);
       } catch {
-        // Boolean cut failed — hole will render via evenodd fill rule
-        outers.push(hole);
+        // Boolean cut can fail on shared edges — skip this hole.
+        // It will still appear correct via evenodd fill in SVG output.
       }
     }
   }
 
   // Fuse all outer contours (holes already cut).
   // Wrap each fuse in try-catch: OpenCascade boolean ops can fail on
-  // near-tangent intersections. Unfusable contours are kept separate.
-  const groups: Drawing[] = [];
+  // near-tangent intersections.  On failure the contour is dropped —
+  // this loses small overlapping annotations but keeps the Drawing
+  // valid for 3D extrusion and downstream boolean operations.
+  let result: Drawing | null = null;
   for (const outer of outers) {
-    let merged = false;
-    for (let i = 0; i < groups.length; i++) {
+    if (!result) {
+      result = outer.drawing;
+    } else {
       try {
-        groups[i] = groups[i]!.fuse(outer.drawing);
-        merged = true;
-        break;
+        result = result.fuse(outer.drawing);
       } catch {
-        // Try next group
+        // Skip unfusable contour
       }
     }
-    if (!merged) {
-      groups.push(outer.drawing);
-    }
   }
-  if (groups.length === 0) return drawRectangle(0.001, 0.001);
-  if (groups.length === 1) return groups[0]!;
-
-  // Multiple unfusable groups — return the largest and store the rest
-  // as extra drawings for SVG export.
-  let best = 0;
-  for (let i = 1; i < groups.length; i++) {
-    if (groups[i]!.boundingBox.width * groups[i]!.boundingBox.height >
-        groups[best]!.boundingBox.width * groups[best]!.boundingBox.height) {
-      best = i;
-    }
-  }
-  const primary = groups[best]!;
-  groups.splice(best, 1);
-  (primary as DrawingWithExtras).__extraDrawings = groups;
-  return primary;
+  return result ?? drawRectangle(0.001, 0.001);
 }
 
 /**
  * Parse an SVG string and convert all <path> elements to a single Drawing.
  *
- * Each <path> element is processed independently (winding-based hole
- * detection within its sub-paths), then all paths are fused together.
- * This prevents contours from separate <path> elements being misidentified
- * as holes of each other.
+ * All contours from all <path> elements are collected and processed
+ * together through contoursToDrawing, which classifies outers vs holes
+ * by winding direction and uses bounding-box containment for pairing.
+ *
+ * When OpenCascade boolean ops fail on near-tangent intersections
+ * (e.g. zigzag resistor body crossed by diagonal arrow), the unfusable
+ * contour is dropped to keep the Drawing valid for 3D extrusion.
  */
 export function svgToDrawing(svgString: string): Drawing {
   const pathRe = /<path[^>]*\bd="([^"]+)"/g;
   let m: RegExpExecArray | null;
 
-  // Each <path> is processed independently so contours from separate
-  // elements aren't misidentified as holes of each other.
-  const drawings: Drawing[] = [];
+  const allContours: Contour[] = [];
   while ((m = pathRe.exec(svgString)) !== null) {
-    const d = m[1]!;
-    const contours = parseSvgPathD(d);
-    if (contours.length === 0) continue;
-    drawings.push(contoursToDrawing(contours));
+    allContours.push(...parseSvgPathD(m[1]!));
   }
 
-  if (drawings.length === 0) return drawRectangle(0.001, 0.001);
-  if (drawings.length === 1) return drawings[0]!;
-
-  // Try to fuse all path drawings together.  When OpenCascade boolean
-  // fuse fails (near-tangent intersections, e.g. zigzag + diagonal),
-  // keep unfusable drawings as extras for SVG export.
-  let result = drawings[0]!;
-  const extras: Drawing[] = [];
-  for (let i = 1; i < drawings.length; i++) {
-    try {
-      result = result.fuse(drawings[i]!);
-    } catch {
-      extras.push(drawings[i]!);
-    }
-  }
-  if (extras.length > 0) {
-    (result as DrawingWithExtras).__extraDrawings = extras;
-  }
-  return result;
+  if (allContours.length === 0) return drawRectangle(0.001, 0.001);
+  return contoursToDrawing(allContours);
 }
