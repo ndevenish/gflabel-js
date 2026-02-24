@@ -60,6 +60,78 @@
     "category": "Hardware"
   },
   {
+    "name": "head-phillips",
+    "label": "Phillips",
+    "spec": "{head(phillips)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-pozidrive",
+    "label": "Pozidrive",
+    "spec": "{head(pozidrive)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-slot",
+    "label": "Slot",
+    "spec": "{head(slot)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-hex",
+    "label": "Hex",
+    "spec": "{head(hex)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-cross",
+    "label": "Cross",
+    "spec": "{head(cross)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-square",
+    "label": "Square",
+    "spec": "{head(square)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-triangle",
+    "label": "Triangle",
+    "spec": "{head(triangle)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-torx",
+    "label": "Torx",
+    "spec": "{head(torx)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-security",
+    "label": "Security",
+    "spec": "{head(security)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-slot-triangle",
+    "label": "Slot + Triangle",
+    "spec": "{head(slot,triangle)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-slot-square",
+    "label": "Slot + Square",
+    "spec": "{head(slot,square)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "head-torx-security",
+    "label": "Torx + Security",
+    "spec": "{head(torx,security)}",
+    "category": "Screw Heads"
+  },
+  {
     "name": "sym-antenna-com-loop",
     "label": "Looped Antenna",
     "spec": "{sym(antenna-com-loop)}",

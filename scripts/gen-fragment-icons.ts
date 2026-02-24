@@ -133,6 +133,28 @@ async function main() {
     renderAndWrite(name, label, `{${name}}`, "Hardware", name, []);
   }
 
+  // ── Screw head fragments ───────────────────────────────────
+  const headFragments = [
+    { name: "head-phillips", label: "Phillips", args: ["phillips"] },
+    { name: "head-pozidrive", label: "Pozidrive", args: ["pozidrive"] },
+    { name: "head-slot", label: "Slot", args: ["slot"] },
+    { name: "head-hex", label: "Hex", args: ["hex"] },
+    { name: "head-cross", label: "Cross", args: ["cross"] },
+    { name: "head-square", label: "Square", args: ["square"] },
+    { name: "head-triangle", label: "Triangle", args: ["triangle"] },
+    { name: "head-torx", label: "Torx", args: ["torx"] },
+    { name: "head-security", label: "Security", args: ["security"] },
+    { name: "head-slot-triangle", label: "Slot + Triangle", args: ["slot", "triangle"] },
+    { name: "head-slot-square", label: "Slot + Square", args: ["slot", "square"] },
+    { name: "head-torx-security", label: "Torx + Security", args: ["torx", "security"] },
+  ];
+
+  console.log("\nScrew head fragments:");
+  for (const { name, label, args } of headFragments) {
+    const spec = `{head(${args.join(",")})}`;
+    renderAndWrite(name, label, spec, "Screw Heads", "head", args);
+  }
+
   // ── Electrical symbols (rendered via {sym(id)} fragment) ────
   const unzipped = unzipSync(zipUint8);
   const symbolManifest = JSON.parse(

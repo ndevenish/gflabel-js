@@ -8,9 +8,10 @@ interface ManifestEntry {
   category: string;
 }
 
+const KEEP_CATEGORIES = new Set(["Hardware", "Screw Heads"]);
 const manifest: ManifestEntry[] = manifestData.map((e) => ({
   ...e,
-  category: e.category === "Hardware" ? "Hardware" : "Electronic Symbols",
+  category: KEEP_CATEGORIES.has(e.category) ? e.category : "Electronic Symbols",
 }));
 
 // Eagerly import all fragment SVGs via Vite glob — returns { path: url }
@@ -37,8 +38,8 @@ const CATEGORIES: string[] = [];
   }
 }
 
-// Hardware is expanded by default, everything else collapsed
-const DEFAULT_EXPANDED = new Set(["Hardware"]);
+// These categories are expanded by default
+const DEFAULT_EXPANDED = new Set(["Hardware", "Screw Heads", "Electronic Symbols"]);
 
 interface Props {
   insertAtCursorRef: React.RefObject<((text: string) => void) | null>;
