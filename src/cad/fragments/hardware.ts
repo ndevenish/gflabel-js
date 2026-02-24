@@ -81,12 +81,12 @@ function driveShape(
   } else if (lower === "square") {
     drawing = drawRectangle(0.6, 0.6).rotate(45);
   } else if (lower === "triangle") {
-    // Equilateral triangle approximation
+    // Equilateral triangle, centroid-centered at origin
     const s = 0.95;
     const h = (s * Math.sqrt(3)) / 2;
-    drawing = draw([0, (2 / 3) * h])
-      .lineTo([-s / 2, -(1 / 3) * h])
-      .lineTo([s / 2, -(1 / 3) * h])
+    drawing = draw([0, (2 * h) / 3])
+      .lineTo([-s / 2, -h / 3])
+      .lineTo([s / 2, -h / 3])
       .close();
   } else if (lower === "torx") {
     // Torx: central circle + 3 stadium-shaped lobes, minus 6 circular cuts
@@ -121,8 +121,8 @@ function driveShape(
     throw new Error(`Unknown head type: ${shape}`);
   }
 
-  // Scale to 2 * radius
-  drawing = drawing.scale(2 * radius);
+  // Scale to 2 * radius (explicitly scale around origin to preserve centering)
+  drawing = drawing.scale(2 * radius, [0, 0]);
 
   return { drawing, positive };
 }
@@ -538,16 +538,9 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
         pen = pen.lineTo([headX, lw / 2]);
         pen = pen.lineTo([headX, headH]);
       } else if (headshape === "round") {
-        // Elliptical dome: CW winding — start at top, arc down the left side
+        // Dome: arc from (headX, headH) to (headX, -headH) bulging left through (-hw, 0)
         pen = draw([headX, headH]);
-        pen = pen.ellipseTo(
-          [headX, -headH],
-          lw,
-          headH,
-          0,
-          true,
-          true,
-        );
+        pen = pen.threePointsArcTo([headX, -headH], [headX - lw, 0]);
         pen = pen.lineTo([headX, -lw / 2]);
         for (const pt of bodyRightPts) pen = pen.lineTo(pt);
         pen = pen.lineTo([headX, lw / 2]);
@@ -726,7 +719,10 @@ registerFragment(
         pen2 = pen2.lineTo([xHead, -(threadTipHeight - threadDepth)]);
 
         // Bottom half threads (reversed, Y negated)
-        for (let i = 1; i < bottomThreadLines.length; i++) {
+        // bottomThreadLines[0] equals (xHead, -(thd-td)) for non-partial (skip it,
+        // we're already there) but is the partial endpoint for partial (must include).
+        const btStart = partial ? 0 : 1;
+        for (let i = btStart; i < bottomThreadLines.length; i++) {
           pen2 = pen2.lineTo(bottomThreadLines[i]!);
         }
 
