@@ -1,5 +1,6 @@
 import React from "react";
 import manifestData from "../assets/fragments/manifest.json";
+import { BoltBuilder } from "./BoltBuilder.js";
 
 interface ManifestEntry {
   name: string;
@@ -26,7 +27,8 @@ function svgUrl(name: string): string | undefined {
   return svgModules[key];
 }
 
-// Build ordered list of unique categories
+// Build ordered list of unique categories, injecting builder sections after "Screw Heads"
+const BUILDER_CATEGORIES = new Set(["Bolts", "Webbolts"]);
 const CATEGORIES: string[] = [];
 {
   const seen = new Set<string>();
@@ -34,12 +36,16 @@ const CATEGORIES: string[] = [];
     if (!seen.has(entry.category)) {
       seen.add(entry.category);
       CATEGORIES.push(entry.category);
+      // Insert builder categories after Screw Heads
+      if (entry.category === "Screw Heads") {
+        CATEGORIES.push("Bolts", "Webbolts");
+      }
     }
   }
 }
 
 // These categories are expanded by default
-const DEFAULT_EXPANDED = new Set(["Hardware", "Screw Heads", "Electronic Symbols"]);
+const DEFAULT_EXPANDED = new Set(["Hardware", "Screw Heads", "Bolts", "Webbolts", "Electronic Symbols"]);
 
 interface Props {
   insertAtCursorRef: React.RefObject<((text: string) => void) | null>;
@@ -98,8 +104,10 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
         }}
       />
       {CATEGORIES.map((cat) => {
-        const entries = grouped.get(cat);
-        if (!entries) return null;
+        const isBuilder = BUILDER_CATEGORIES.has(cat);
+        const entries = isBuilder ? null : grouped.get(cat);
+        // Hide non-builder categories with no matching entries
+        if (!isBuilder && !entries) return null;
         // When filtering, force all matching categories open
         const isOpen = isFiltering || expanded.has(cat);
         return (
@@ -135,11 +143,21 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
                 &#9654;
               </span>
               {cat}
-              <span style={{ fontWeight: 400, color: "#9ca3af", marginLeft: 2 }}>
-                {entries.length}
-              </span>
+              {entries && (
+                <span style={{ fontWeight: 400, color: "#9ca3af", marginLeft: 2 }}>
+                  {entries.length}
+                </span>
+              )}
             </button>
-            {isOpen && (
+            {isOpen && isBuilder && (
+              <div style={{ paddingTop: 2, paddingBottom: 4 }}>
+                <BoltBuilder
+                  mode={cat === "Bolts" ? "bolt" : "webbolt"}
+                  insertAtCursorRef={insertAtCursorRef}
+                />
+              </div>
+            )}
+            {isOpen && entries && (
               <div
                 style={{
                   display: "grid",
