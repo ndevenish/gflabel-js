@@ -37,7 +37,6 @@ const BOLT_MODIFIERS = ["tapping", "flip", "slotted", "flanged"] as const;
 const WEBBOLT_MODIFIERS = ["tapping", "partial", "flip"] as const;
 
 interface BoltBuilderProps {
-  mode: "bolt" | "webbolt";
   insertAtCursorRef: React.RefObject<((text: string) => void) | null>;
 }
 
@@ -115,11 +114,27 @@ const labelStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
-export function BoltBuilder({ mode, insertAtCursorRef }: BoltBuilderProps) {
+export function BoltBuilder({ insertAtCursorRef }: BoltBuilderProps) {
+  const [mode, setMode] = React.useState<"bolt" | "webbolt">("bolt");
   const [length, setLength] = React.useState(10);
   const [headShape, setHeadShape] = React.useState("pan");
   const [drive, setDrive] = React.useState<string | null>(null);
   const [modifiers, setModifiers] = React.useState<Set<string>>(() => new Set());
+
+  const switchMode = (newMode: "bolt" | "webbolt") => {
+    if (newMode === mode) return;
+    setMode(newMode);
+    // Clear drive when switching to bolt (bolt doesn't support drives)
+    if (newMode === "bolt") setDrive(null);
+    // Clear modifiers not available in the new mode
+    const available = new Set<string>(
+      newMode === "bolt" ? BOLT_MODIFIERS : WEBBOLT_MODIFIERS,
+    );
+    setModifiers((prev) => {
+      const next = new Set([...prev].filter((m) => available.has(m)));
+      return next.size === prev.size ? prev : next;
+    });
+  };
   const [svgHtml, setSvgHtml] = React.useState<string | null>(null);
   const [rendering, setRendering] = React.useState(false);
 
@@ -192,6 +207,23 @@ export function BoltBuilder({ mode, insertAtCursorRef }: BoltBuilderProps) {
             {rendering ? "Rendering..." : "No preview"}
           </span>
         )}
+      </div>
+
+      {/* Type toggle */}
+      <div style={rowStyle}>
+        <span style={labelStyle}>Type</span>
+        <button
+          onClick={() => switchMode("bolt")}
+          style={mode === "bolt" ? pillBtnActive : pillBtn}
+        >
+          Bolt
+        </button>
+        <button
+          onClick={() => switchMode("webbolt")}
+          style={mode === "webbolt" ? pillBtnActive : pillBtn}
+        >
+          Webbolt
+        </button>
       </div>
 
       {/* Length (bolt only) */}

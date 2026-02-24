@@ -28,7 +28,7 @@ function svgUrl(name: string): string | undefined {
 }
 
 // Build ordered list of unique categories, injecting builder sections after "Screw Heads"
-const BUILDER_CATEGORIES = new Set(["Bolts", "Webbolts"]);
+const BUILDER_CATEGORIES = new Set(["Bolts"]);
 const CATEGORIES: string[] = [];
 {
   const seen = new Set<string>();
@@ -38,14 +38,14 @@ const CATEGORIES: string[] = [];
       CATEGORIES.push(entry.category);
       // Insert builder categories after Screw Heads
       if (entry.category === "Screw Heads") {
-        CATEGORIES.push("Bolts", "Webbolts");
+        CATEGORIES.push("Bolts");
       }
     }
   }
 }
 
 // These categories are expanded by default
-const DEFAULT_EXPANDED = new Set(["Hardware", "Screw Heads", "Bolts", "Webbolts", "Electronic Symbols"]);
+const DEFAULT_EXPANDED = new Set(["Hardware", "Screw Heads", "Bolts", "Electronic Symbols"]);
 
 interface Props {
   insertAtCursorRef: React.RefObject<((text: string) => void) | null>;
@@ -151,10 +151,7 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
             </button>
             {isOpen && isBuilder && (
               <div style={{ paddingTop: 2, paddingBottom: 4 }}>
-                <BoltBuilder
-                  mode={cat === "Bolts" ? "bolt" : "webbolt"}
-                  insertAtCursorRef={insertAtCursorRef}
-                />
+                <BoltBuilder insertAtCursorRef={insertAtCursorRef} />
               </div>
             )}
             {isOpen && entries && (
