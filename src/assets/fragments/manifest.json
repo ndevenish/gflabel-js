@@ -480,9 +480,27 @@
     "category": "Resistor"
   },
   {
+    "name": "sym-resistor-ieee-varistor",
+    "label": "Varistor (IEEE/ANSI) (IEEE)",
+    "spec": "{sym(resistor-ieee-varistor)}",
+    "category": "Resistor"
+  },
+  {
     "name": "sym-resistor-ieee-trimmer",
     "label": "Trimmer / Trim-Pot (IEEE/ANSI) (IEEE)",
     "spec": "{sym(resistor-ieee-trimmer)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-ieee-thermistor",
+    "label": "Thermistor (IEEE/ANSI) (IEEE)",
+    "spec": "{sym(resistor-ieee-thermistor)}",
+    "category": "Resistor"
+  },
+  {
+    "name": "sym-resistor-ieee-rheostat",
+    "label": "Rheostat / Variable Resistor (IEEE/ANSI) (IEEE)",
+    "spec": "{sym(resistor-ieee-rheostat)}",
     "category": "Resistor"
   },
   {

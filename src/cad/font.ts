@@ -321,17 +321,46 @@ export function glyphsToDrawing(text: string, sizeMm: number): Drawing {
  * Export a Drawing as a filled SVG string, matching Python's output style.
  */
 export function drawingToFilledSVG(drawing: Drawing): string {
-  const vb = drawing.toSVGViewBox();
-  const paths = drawing.toSVGPaths();
-  // toSVGPaths returns string[][] — groups of path d-strings per face.
-  // Flatten all d-strings into a single <path> with fill-rule="evenodd"
-  // so that contained sub-faces render as holes (e.g. fuse-ieee symbol
-  // where boolean cuts fail due to shared edges).
+  // Collect SVG paths from the main drawing and any extras that
+  // couldn't be fused due to OpenCascade boolean failures.
   const allD: string[] = [];
-  for (const entry of paths) {
-    const group = Array.isArray(entry) ? entry : [entry];
-    allD.push(...group);
+
+  function collectPaths(d: Drawing): void {
+    for (const entry of d.toSVGPaths()) {
+      const group = Array.isArray(entry) ? entry : [entry];
+      allD.push(...group);
+    }
   }
+
+  collectPaths(drawing);
+
+  const extras = (drawing as import("./svg.js").DrawingWithExtras)
+    .__extraDrawings;
+  if (extras) {
+    for (const extra of extras) collectPaths(extra);
+  }
+
+  // Compute viewBox that covers all drawings
+  let vb = drawing.toSVGViewBox();
+  if (extras && extras.length > 0) {
+    // Parse and expand viewBox to cover extras
+    const [x, y, w, h] = vb.split(" ").map(Number);
+    let minX = x!,
+      minY = y!,
+      maxX = x! + w!,
+      maxY = y! + h!;
+    for (const extra of extras) {
+      const [ex, ey, ew, eh] = extra.toSVGViewBox().split(" ").map(Number);
+      minX = Math.min(minX, ex!);
+      minY = Math.min(minY, ey!);
+      maxX = Math.max(maxX, ex! + ew!);
+      maxY = Math.max(maxY, ey! + eh!);
+    }
+    vb = `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
+  }
+
+  // Flatten all d-strings into a single <path> with fill-rule="evenodd"
+  // so that contained sub-faces render as holes.
   const pathEl =
     allD.length === 1
       ? `<path d="${allD[0]}" />`
