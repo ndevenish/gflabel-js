@@ -57,6 +57,8 @@ function saveSettings(s: Settings): void {
 }
 
 interface Props {
+  lockedBaseType?: BaseType;
+  onNavigateHome: () => void;
   onMeshUpdate: (mesh: MeshData) => void;
   onSvgUpdate: (svg: string) => void;
   previewMode: PreviewMode;
@@ -67,6 +69,8 @@ interface Props {
 }
 
 export function ControlPanel({
+  lockedBaseType,
+  onNavigateHome,
   onMeshUpdate,
   onSvgUpdate,
   previewMode,
@@ -76,7 +80,7 @@ export function ControlPanel({
   onError,
 }: Props) {
   const [saved] = React.useState(loadSettings);
-  const [baseType, setBaseType] = React.useState<BaseType>(saved.baseType);
+  const [baseType, setBaseType] = React.useState<BaseType>(lockedBaseType ?? saved.baseType);
   const [width, setWidth] = React.useState(saved.width);
   const [height, setHeight] = React.useState<number | undefined>(saved.height);
   const [spec, setSpec] = React.useState(saved.spec);
@@ -84,6 +88,16 @@ export function ControlPanel({
   const [style, setStyle] = React.useState<LabelStyle>(saved.style);
   const [workerReady, setWorkerReady] = React.useState(false);
   const [autoRender, setAutoRender] = React.useState(saved.autoRender);
+
+  // Sync baseType when route-locked type changes
+  React.useEffect(() => {
+    if (lockedBaseType !== undefined) {
+      setBaseType(lockedBaseType);
+      setWidth(defaultWidth(lockedBaseType));
+      setHeight(undefined);
+      setVersion(undefined);
+    }
+  }, [lockedBaseType]);
 
   // Sync saved previewMode to parent on mount
   React.useEffect(() => {
@@ -209,7 +223,17 @@ export function ControlPanel({
       {/* Top zone: controls (shrink-to-fit) */}
       <div style={{ padding: "16px 16px 0", display: "flex", flexDirection: "column", gap: 16, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ margin: 0, fontSize: 18 }}>GFLabel</h2>
+          {lockedBaseType ? (
+            <a
+              href="/"
+              onClick={(e) => { e.preventDefault(); onNavigateHome(); }}
+              style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#2563eb", textDecoration: "none", cursor: "pointer" }}
+            >
+              GFLabel
+            </a>
+          ) : (
+            <h2 style={{ margin: 0, fontSize: 18 }}>GFLabel</h2>
+          )}
           <button
             onClick={resetSettings}
             title="Reset all settings to defaults"
@@ -227,12 +251,14 @@ export function ControlPanel({
           </button>
         </div>
 
-        <BaseSelector value={baseType} onChange={(bt) => {
-          setBaseType(bt);
-          setWidth(defaultWidth(bt));
-          setHeight(undefined);
-          setVersion(undefined);
-        }} />
+        {!lockedBaseType && (
+          <BaseSelector value={baseType} onChange={(bt) => {
+            setBaseType(bt);
+            setWidth(defaultWidth(bt));
+            setHeight(undefined);
+            setVersion(undefined);
+          }} />
+        )}
 
         {baseType === "cullenect" && (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

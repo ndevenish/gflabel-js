@@ -1,15 +1,5 @@
 
-import type { BaseType } from "../cad/bases/base.js";
-
-const BASE_TYPES: BaseType[] = [
-  "pred",
-  "plain",
-  "none",
-  "predbox",
-  "tailorbox",
-  "cullenect",
-  "modern",
-];
+import { BASE_TYPES, type BaseType } from "../cad/bases/base.js";
 
 const WIP_TYPES: Set<BaseType> = new Set(["modern"]);
 

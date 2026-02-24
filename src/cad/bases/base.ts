@@ -15,6 +15,10 @@ export type BaseType =
   | "cullenect"
   | "modern";
 
+export const BASE_TYPES: BaseType[] = [
+  "pred", "plain", "none", "predbox", "tailorbox", "cullenect", "modern",
+];
+
 export interface BaseConfig {
   baseType: BaseType;
   /** Width in gridfinity units (for unit-based) or mm (for mm-based) */
