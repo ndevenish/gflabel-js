@@ -15,6 +15,7 @@ CASES=(
   'pred "{threaded_insert}"'
   'pred "{sym(resistor)}"'
   'pred "{sym(capacitor,iec)}"'
+  'pred "{head(triangle,security)}"'
 )
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

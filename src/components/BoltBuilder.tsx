@@ -56,7 +56,7 @@ function buildSpec(
   if (mode === "webbolt" || headShape !== "pan") {
     parts.push(headShape);
   }
-  if (drive) {
+  if (drive && mode === "webbolt") {
     parts.push(drive);
   }
   for (const m of mode === "bolt" ? BOLT_MODIFIERS : WEBBOLT_MODIFIERS) {
@@ -229,48 +229,50 @@ export function BoltBuilder({ mode, insertAtCursorRef }: BoltBuilderProps) {
         ))}
       </div>
 
-      {/* Drive */}
-      <div style={rowStyle}>
-        <span style={labelStyle}>Drive</span>
-        {DRIVES.map((d) => {
-          const active = drive === d.id;
-          if (d.icon) {
-            const url = headSvgUrl(d.icon);
+      {/* Drive (webbolt only — bolt doesn't render drives) */}
+      {mode === "webbolt" && (
+        <div style={rowStyle}>
+          <span style={labelStyle}>Drive</span>
+          {DRIVES.map((d) => {
+            const active = drive === d.id;
+            if (d.icon) {
+              const url = headSvgUrl(d.icon);
+              return (
+                <button
+                  key={d.id}
+                  title={d.id!}
+                  onClick={() => setDrive(d.id)}
+                  style={active ? iconBtnActive : iconBtn}
+                >
+                  {url ? (
+                    <img
+                      src={url}
+                      alt={d.id!}
+                      style={{
+                        width: 20,
+                        height: 20,
+                        objectFit: "contain",
+                        filter: active ? "brightness(0) invert(1)" : undefined,
+                      }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 8 }}>{d.id}</span>
+                  )}
+                </button>
+              );
+            }
             return (
               <button
-                key={d.id}
-                title={d.id!}
-                onClick={() => setDrive(d.id)}
-                style={active ? iconBtnActive : iconBtn}
+                key="none"
+                onClick={() => setDrive(null)}
+                style={active ? pillBtnActive : pillBtn}
               >
-                {url ? (
-                  <img
-                    src={url}
-                    alt={d.id!}
-                    style={{
-                      width: 20,
-                      height: 20,
-                      objectFit: "contain",
-                      filter: active ? "brightness(0) invert(1)" : undefined,
-                    }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 8 }}>{d.id}</span>
-                )}
+                {d.label}
               </button>
             );
-          }
-          return (
-            <button
-              key="none"
-              onClick={() => setDrive(null)}
-              style={active ? pillBtnActive : pillBtn}
-            >
-              {d.label}
-            </button>
-          );
-        })}
-      </div>
+          })}
+        </div>
+      )}
 
       {/* Modifiers */}
       <div style={rowStyle}>
