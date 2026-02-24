@@ -8,6 +8,7 @@ import { renderLabel, renderSVG, ensureReady } from "../cad/workerClient.js";
 import type { MeshData } from "../cad/workerClient.js";
 import { LabelStyle } from "../cad/options.js";
 import type { BaseConfig, BaseType } from "../cad/bases/base.js";
+import { CULLENECT_VERSIONS } from "../cad/bases/cullenect.js";
 import type { PreviewMode } from "../App.js";
 
 interface Props {
@@ -33,6 +34,7 @@ export function ControlPanel({
   const [width, setWidth] = React.useState(1);
   const [height, setHeight] = React.useState<number | undefined>(undefined);
   const [spec, setSpec] = React.useState("{nut}M3");
+  const [version, setVersion] = React.useState<string | undefined>(undefined);
   const [style, setStyle] = React.useState<LabelStyle>(LabelStyle.EMBOSSED);
   const [workerReady, setWorkerReady] = React.useState(false);
   const [autoRender, setAutoRender] = React.useState(true);
@@ -53,6 +55,7 @@ export function ControlPanel({
         baseType,
         width,
         height,
+        version,
       };
       if (previewMode === "svg") {
         const result = await renderSVG({
@@ -80,6 +83,7 @@ export function ControlPanel({
     baseType,
     width,
     height,
+    version,
     style,
     previewMode,
     onMeshUpdate,
@@ -92,9 +96,9 @@ export function ControlPanel({
   // Ensure the worker has a 3D solid (needed before export).
   const ensureRendered3D = React.useCallback(async () => {
     if (!workerReady || !spec.trim()) return;
-    const baseConfig: BaseConfig = { baseType, width, height };
+    const baseConfig: BaseConfig = { baseType, width, height, version };
     await renderLabel({ spec, base: baseConfig, style });
-  }, [workerReady, spec, baseType, width, height, style]);
+  }, [workerReady, spec, baseType, width, height, version, style]);
 
   // Keep a stable ref to doRender so the debounce effect doesn't re-trigger
   // when callback identity changes.
@@ -116,7 +120,7 @@ export function ControlPanel({
     }, delay);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec, baseType, width, height, style, previewMode, workerReady, autoRender]);
+  }, [spec, baseType, width, height, version, style, previewMode, workerReady, autoRender]);
 
   const handleRender = doRender;
 
@@ -139,7 +143,25 @@ export function ControlPanel({
           setBaseType(bt);
           setWidth(defaultWidth(bt));
           setHeight(undefined);
+          setVersion(undefined);
         }} />
+
+        {baseType === "cullenect" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+              Version
+            </label>
+            <select
+              value={version ?? "v2.0.0"}
+              onChange={(e) => setVersion(e.target.value)}
+              style={{ flex: 1, padding: "6px 8px" }}
+            >
+              {CULLENECT_VERSIONS.map((v) => (
+                <option key={v.id} value={v.id}>{v.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <BaseSizeControls
           baseType={baseType}

@@ -1,7 +1,10 @@
 /**
- * Cullenect (Webb-style) label base — port of bases/cullenect.py v2.0.0.
+ * Cullenect (Webb-style) label base — port of bases/cullenect.py.
  *
- * Rounded rectangle body with inset border detail and optional T-shaped ribs (1u only).
+ * Supports three geometry versions:
+ *   v1.1   — fixed 1u width (36.4mm), depth 1.0, ribs + fillets/chamfers
+ *   v2.0.0 — multi-width (u*42-6), depth 1.2, inset border, ribs on 1u
+ *   v2+    — same as v2.0.0 but ribs disabled
  */
 
 import {
@@ -13,7 +16,15 @@ import {
 import type { BaseConfig, LabelBaseResult } from "./base.js";
 import type { Vec2 } from "../label.js";
 
-/** Convert gridfinity units to mm for cullenect: u * 42 - 6 */
+export type CullenectVersion = "v1.1" | "v2.0.0" | "v2+";
+
+export const CULLENECT_VERSIONS: { id: CullenectVersion; label: string }[] = [
+  { id: "v2.0.0", label: "v2.0.0 (latest)" },
+  { id: "v2+", label: "v2+ (no ribs)" },
+  { id: "v1.1", label: "v1.1" },
+];
+
+/** Convert gridfinity units to mm for cullenect v2: u * 42 - 6 */
 function cullenectWidthMm(widthU: number): number {
   return widthU * 42 - 6;
 }
@@ -46,12 +57,48 @@ function ribProfile(x: number, depth: number): Drawing {
     .close();
 }
 
-export function buildCullenectBase(config: BaseConfig): LabelBaseResult {
+/** Cut T-shaped ribs and fillet the Z-axis edges they create. */
+function cutRibs(solid: Solid, heightMm: number, depth: number): Solid {
+  const ribXPositions = [-12.133, 0, 12.133];
+  for (const rx of ribXPositions) {
+    const rib = ribProfile(rx, depth);
+    let ribSolid = rib.sketchOnPlane("XZ").extrude(heightMm / 2) as Solid;
+    const ribSolid2 = rib.sketchOnPlane("XZ").extrude(-heightMm / 2) as Solid;
+    ribSolid = ribSolid.fuse(ribSolid2);
+    solid = solid.cut(ribSolid);
+  }
+
+  try {
+    solid = solid.fillet(0.5, (e) =>
+      e.inDirection("Z").ofLength((l) => l < depth),
+    ) as unknown as Solid;
+  } catch {
+    // Fillet may fail on complex topology
+  }
+
+  return solid;
+}
+
+/** v1.1: fixed 36.4mm width, depth 1.0, ribs + fillets. */
+function buildV11(heightMm: number): LabelBaseResult {
+  const widthMm = 36.4;
+  const depth = 1.0;
+
+  const bodyProfile = drawRoundedRectangle(widthMm, heightMm, 0.5);
+  let solid = bodyProfile.sketchOnPlane("XY").extrude(-depth) as Solid;
+
+  solid = cutRibs(solid, heightMm, depth);
+
+  const area: Vec2 = { x: widthMm, y: heightMm };
+  return { solid, area };
+}
+
+/** v2.0.0 / v2+: multi-width, depth 1.2, inset border, optional ribs. */
+function buildV200(config: BaseConfig, ribs: boolean): LabelBaseResult {
   const widthMm = cullenectWidthMm(config.width);
   const heightMm = config.height ?? 11;
   const depth = 1.2;
 
-  // Main body
   const bodyProfile = drawRoundedRectangle(widthMm, heightMm, 0.5);
   let solid = bodyProfile.sketchOnPlane("XY").extrude(-depth) as Solid;
 
@@ -60,31 +107,21 @@ export function buildCullenectBase(config: BaseConfig): LabelBaseResult {
   const borderSolid = border.sketchOnPlane("XY", -0.4).extrude(-(depth - 0.6)) as Solid;
   solid = solid.cut(borderSolid);
 
-  // Ribs (1u only): T-shaped profiles on XZ plane
-  if (config.width === 1) {
-    const ribXPositions = [-12.133, 0, 12.133];
-    for (const rx of ribXPositions) {
-      const rib = ribProfile(rx, depth);
-      // Sketch on XZ plane, extrude ±heightMm/2 along Y
-      let ribSolid = rib.sketchOnPlane("XZ").extrude(heightMm / 2) as Solid;
-      const ribSolid2 = rib.sketchOnPlane("XZ").extrude(-heightMm / 2) as Solid;
-      ribSolid = ribSolid.fuse(ribSolid2);
-
-      solid = solid.cut(ribSolid);
-    }
-
-    // Fillet the Z-axis edges left by the rib cuts.
-    // Filter to short Z-axis edges near rib X positions (the cut creates
-    // Z-parallel edges with length < depth at each rib slot).
-    try {
-      solid = solid.fillet(0.5, (e) =>
-        e.inDirection("Z").ofLength((l) => l < depth),
-      ) as unknown as Solid;
-    } catch {
-      // Fillet may fail on complex topology
-    }
+  // Ribs (1u only)
+  if (config.width === 1 && ribs) {
+    solid = cutRibs(solid, heightMm, depth);
   }
 
   const area: Vec2 = { x: widthMm, y: heightMm };
   return { solid, area };
+}
+
+export function buildCullenectBase(config: BaseConfig): LabelBaseResult {
+  const version = (config.version ?? "v2.0.0") as CullenectVersion;
+
+  if (version === "v1.1") {
+    return buildV11(config.height ?? 11);
+  }
+
+  return buildV200(config, version !== "v2+");
 }

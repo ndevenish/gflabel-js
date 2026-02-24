@@ -24,6 +24,8 @@ export interface BaseConfig {
   depth?: number;
   /** Label style — affects base geometry (e.g. recessed for embossed) */
   style?: LabelStyle;
+  /** Geometry version (base-specific, e.g. cullenect "v1.1" / "v2.0.0" / "v2+") */
+  version?: string;
 }
 
 export interface LabelBaseResult {
