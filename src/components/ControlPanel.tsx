@@ -11,6 +11,51 @@ import type { BaseConfig, BaseType } from "../cad/bases/base.js";
 import { CULLENECT_VERSIONS } from "../cad/bases/cullenect.js";
 import type { PreviewMode } from "../App.js";
 
+const STORAGE_KEY = "gflabel-settings";
+
+interface Settings {
+  baseType: BaseType;
+  width: number;
+  height?: number;
+  version?: string;
+  style: LabelStyle;
+  spec: string;
+  autoRender: boolean;
+  previewMode: PreviewMode;
+}
+
+const DEFAULTS: Settings = {
+  baseType: "pred",
+  width: 1,
+  height: undefined,
+  version: undefined,
+  style: LabelStyle.EMBOSSED,
+  spec: "{nut}M3",
+  autoRender: true,
+  previewMode: "svg",
+};
+
+function loadSettings(): Settings {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULTS, ...parsed };
+    }
+  } catch {
+    // Corrupt or unavailable — fall through to defaults
+  }
+  return { ...DEFAULTS };
+}
+
+function saveSettings(s: Settings): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
 interface Props {
   onMeshUpdate: (mesh: MeshData) => void;
   onSvgUpdate: (svg: string) => void;
@@ -30,14 +75,40 @@ export function ControlPanel({
   onRenderEnd,
   onError,
 }: Props) {
-  const [baseType, setBaseType] = React.useState<BaseType>("pred");
-  const [width, setWidth] = React.useState(1);
-  const [height, setHeight] = React.useState<number | undefined>(undefined);
-  const [spec, setSpec] = React.useState("{nut}M3");
-  const [version, setVersion] = React.useState<string | undefined>(undefined);
-  const [style, setStyle] = React.useState<LabelStyle>(LabelStyle.EMBOSSED);
+  const [saved] = React.useState(loadSettings);
+  const [baseType, setBaseType] = React.useState<BaseType>(saved.baseType);
+  const [width, setWidth] = React.useState(saved.width);
+  const [height, setHeight] = React.useState<number | undefined>(saved.height);
+  const [spec, setSpec] = React.useState(saved.spec);
+  const [version, setVersion] = React.useState<string | undefined>(saved.version);
+  const [style, setStyle] = React.useState<LabelStyle>(saved.style);
   const [workerReady, setWorkerReady] = React.useState(false);
-  const [autoRender, setAutoRender] = React.useState(true);
+  const [autoRender, setAutoRender] = React.useState(saved.autoRender);
+
+  // Sync saved previewMode to parent on mount
+  React.useEffect(() => {
+    if (saved.previewMode !== previewMode) {
+      onPreviewModeChange(saved.previewMode);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist settings on change
+  React.useEffect(() => {
+    saveSettings({ baseType, width, height, version, style, spec, autoRender, previewMode });
+  }, [baseType, width, height, version, style, spec, autoRender, previewMode]);
+
+  const resetSettings = () => {
+    setBaseType(DEFAULTS.baseType);
+    setWidth(DEFAULTS.width);
+    setHeight(DEFAULTS.height);
+    setVersion(DEFAULTS.version);
+    setStyle(DEFAULTS.style);
+    setSpec(DEFAULTS.spec);
+    setAutoRender(DEFAULTS.autoRender);
+    onPreviewModeChange(DEFAULTS.previewMode);
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   // Initialize worker
   React.useEffect(() => {
@@ -137,7 +208,24 @@ export function ControlPanel({
     >
       {/* Top zone: controls (shrink-to-fit) */}
       <div style={{ padding: "16px 16px 0", display: "flex", flexDirection: "column", gap: 16, flexShrink: 0 }}>
-        <h2 style={{ margin: 0, fontSize: 18 }}>GFLabel</h2>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>GFLabel</h2>
+          <button
+            onClick={resetSettings}
+            title="Reset all settings to defaults"
+            style={{
+              padding: "3px 8px",
+              border: "1px solid #d1d5db",
+              borderRadius: 4,
+              background: "#f9fafb",
+              cursor: "pointer",
+              fontSize: 11,
+              color: "#6b7280",
+            }}
+          >
+            Reset
+          </button>
+        </div>
 
         <BaseSelector value={baseType} onChange={(bt) => {
           setBaseType(bt);
