@@ -1,14 +1,14 @@
 [
   {
-    "name": "nut",
-    "label": "Nut",
-    "spec": "{nut}",
+    "name": "circle",
+    "label": "Circle",
+    "spec": "{circle}",
     "category": "Hardware"
   },
   {
-    "name": "washer",
-    "label": "Washer",
-    "spec": "{washer}",
+    "name": "locknut_profile",
+    "label": "Lock Nut Profile",
+    "spec": "{locknut_profile}",
     "category": "Hardware"
   },
   {
@@ -24,6 +24,18 @@
     "category": "Hardware"
   },
   {
+    "name": "nut",
+    "label": "Nut",
+    "spec": "{nut}",
+    "category": "Hardware"
+  },
+  {
+    "name": "nut_profile",
+    "label": "Nut Profile",
+    "spec": "{nut_profile}",
+    "category": "Hardware"
+  },
+  {
     "name": "threaded_insert",
     "label": "Threaded Insert",
     "spec": "{threaded_insert}",
@@ -36,27 +48,15 @@
     "category": "Hardware"
   },
   {
-    "name": "circle",
-    "label": "Circle",
-    "spec": "{circle}",
-    "category": "Hardware"
-  },
-  {
     "name": "variable_resistor",
     "label": "Variable Resistor",
     "spec": "{variable_resistor}",
     "category": "Hardware"
   },
   {
-    "name": "nut_profile",
-    "label": "Nut Profile",
-    "spec": "{nut_profile}",
-    "category": "Hardware"
-  },
-  {
-    "name": "locknut_profile",
-    "label": "Lock Nut Profile",
-    "spec": "{locknut_profile}",
+    "name": "washer",
+    "label": "Washer",
+    "spec": "{washer}",
     "category": "Hardware"
   },
   {

@@ -12,7 +12,7 @@
  */
 
 import { resolve, dirname } from "path";
-import { writeFileSync, readFileSync, mkdirSync } from "fs";
+import { writeFileSync, readFileSync, mkdirSync, readdirSync } from "fs";
 import { fileURLToPath } from "url";
 import { unzipSync } from "fflate";
 
@@ -90,6 +90,7 @@ async function main() {
     category: string,
     fragName: string,
     fragArgs: string[],
+    meta?: Record<string, string>,
   ): boolean {
     const factory = FRAGMENT_REGISTRY.get(fragName);
     if (!factory) {
@@ -103,9 +104,12 @@ async function main() {
         console.warn(`  SKIP "${name}" — no drawing`);
         return false;
       }
-      const svg = drawingToFilledSVG(result.drawing);
+      const svg = drawingToFilledSVG(result.drawing, 3, meta);
       writeFileSync(resolve(OUT_DIR, `${name}.svg`), svg, "utf-8");
-      manifest.push({ name, label, spec, category });
+      if (!meta) {
+        // Only add to manifest explicitly when not using embedded metadata
+        manifest.push({ name, label, spec, category });
+      }
       console.log(`  ${name}.svg`);
       return true;
     } catch (err) {
@@ -130,7 +134,12 @@ async function main() {
 
   console.log("Hardware fragments:");
   for (const { name, label } of hardwareFragments) {
-    renderAndWrite(name, label, `{${name}}`, "Hardware", name, []);
+    renderAndWrite(name, label, `{${name}}`, "Hardware", name, [], {
+      name,
+      label,
+      spec: `{${name}}`,
+      category: "Hardware",
+    });
   }
 
   // ── Screw head fragments ───────────────────────────────────
@@ -186,13 +195,38 @@ async function main() {
     );
   }
 
+  // Scan SVGs for embedded metadata and prepend to manifest
+  const dataNameRe = /data-name="([^"]+)"/;
+  const dataLabelRe = /data-label="([^"]+)"/;
+  const dataSpecRe = /data-spec="([^"]+)"/;
+  const dataCategoryRe = /data-category="([^"]+)"/;
+  const embeddedEntries: ManifestEntry[] = [];
+  for (const file of readdirSync(OUT_DIR).filter((f) => f.endsWith(".svg")).sort()) {
+    const content = readFileSync(resolve(OUT_DIR, file), "utf-8");
+    const nameMatch = dataNameRe.exec(content);
+    if (!nameMatch) continue;
+    const labelMatch = dataLabelRe.exec(content);
+    const specMatch = dataSpecRe.exec(content);
+    const categoryMatch = dataCategoryRe.exec(content);
+    if (labelMatch && specMatch && categoryMatch) {
+      embeddedEntries.push({
+        name: nameMatch[1]!,
+        label: labelMatch[1]!,
+        spec: specMatch[1]!,
+        category: categoryMatch[1]!,
+      });
+    }
+  }
+  const fullManifest = [...embeddedEntries, ...manifest];
+  console.log(`\nFound ${embeddedEntries.length} SVGs with embedded metadata`);
+
   // Write manifest
   writeFileSync(
     resolve(OUT_DIR, "manifest.json"),
-    JSON.stringify(manifest, null, 2),
+    JSON.stringify(fullManifest, null, 2),
     "utf-8",
   );
-  console.log(`\nWrote manifest.json (${manifest.length} entries)`);
+  console.log(`Wrote manifest.json (${fullManifest.length} entries)`);
   console.log("Done.");
 }
 

@@ -10,16 +10,48 @@ interface ManifestEntry {
 }
 
 const KEEP_CATEGORIES = new Set(["Hardware", "Screw Heads"]);
-const manifest: ManifestEntry[] = manifestData.map((e) => ({
-  ...e,
-  category: KEEP_CATEGORIES.has(e.category) ? e.category : "Electronic Symbols",
-}));
 
 // Eagerly import all fragment SVGs as raw strings — inlined into the JS bundle
 const svgRawModules = import.meta.glob<string>(
   "../assets/fragments/*.svg",
   { eager: true, import: "default", query: "?raw" },
 );
+
+// Parse data-* attributes from SVG raw strings to auto-discover metadata
+function parseSvgMeta(raw: string): ManifestEntry | null {
+  const get = (attr: string) => {
+    const m = raw.match(new RegExp(`data-${attr}="([^"]+)"`));
+    return m?.[1] ?? null;
+  };
+  const name = get("name");
+  const label = get("label");
+  const spec = get("spec");
+  const category = get("category");
+  if (name && label && spec && category) return { name, label, spec, category };
+  return null;
+}
+
+// Merge manifest.json entries with metadata embedded in SVGs
+const manifest: ManifestEntry[] = (() => {
+  const byName = new Map<string, ManifestEntry>();
+
+  // First, add entries discovered from SVG data-* attributes
+  for (const raw of Object.values(svgRawModules)) {
+    const entry = parseSvgMeta(raw);
+    if (entry) byName.set(entry.name, entry);
+  }
+
+  // Then, add/override with manifest.json entries (screw heads, symbols, etc.)
+  for (const e of manifestData) {
+    const mapped: ManifestEntry = {
+      ...e,
+      category: KEEP_CATEGORIES.has(e.category) ? e.category : "Electronic Symbols",
+    };
+    byName.set(mapped.name, mapped);
+  }
+
+  return Array.from(byName.values());
+})();
 
 /** Resolve a manifest entry's name to a data URI for its SVG. */
 function svgUrl(name: string): string | undefined {

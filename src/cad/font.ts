@@ -331,7 +331,11 @@ function roundSvgNumbers(svg: string, dp: number): string {
  * Export a Drawing as a filled SVG string, matching Python's output style.
  * Coordinates are rounded to `precision` decimal places (default 3 ≈ 0.001mm).
  */
-export function drawingToFilledSVG(drawing: Drawing, precision = 3): string {
+export function drawingToFilledSVG(
+  drawing: Drawing,
+  precision = 3,
+  meta?: Record<string, string>,
+): string {
   const vb = drawing.toSVGViewBox();
   const paths = drawing.toSVGPaths();
   // toSVGPaths returns string[][] — groups of path d-strings per face.
@@ -347,7 +351,10 @@ export function drawingToFilledSVG(drawing: Drawing, precision = 3): string {
     allD.length === 1
       ? `<path d="${allD[0]}" />`
       : `<path fill-rule="evenodd" d="${allD.join(" ")}" />`;
-  const raw = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" fill="black" stroke="none">${pathEl}</svg>`;
+  const dataAttrs = meta
+    ? " " + Object.entries(meta).map(([k, v]) => `data-${k}="${v}"`).join(" ")
+    : "";
+  const raw = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" fill="black" stroke="none"${dataAttrs}>${pathEl}</svg>`;
   return roundSvgNumbers(raw, precision);
 }
 
