@@ -352,22 +352,24 @@ export function ControlPanel({
           </div>
         </div>
 
-        <button
-          onClick={handleRender}
-          disabled={!workerReady || !spec.trim()}
-          style={{
-            padding: "10px 16px",
-            background: workerReady ? "#2563eb" : "#94a3b8",
-            color: "white",
-            border: "none",
-            borderRadius: 6,
-            cursor: workerReady ? "pointer" : "not-allowed",
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
-          {workerReady ? "Render" : "Loading WASM..."}
-        </button>
+        {!autoRender && (
+          <button
+            onClick={handleRender}
+            disabled={!workerReady || !spec.trim()}
+            style={{
+              padding: "10px 16px",
+              background: workerReady ? "#2563eb" : "#94a3b8",
+              color: "white",
+              border: "none",
+              borderRadius: 6,
+              cursor: workerReady ? "pointer" : "not-allowed",
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            {workerReady ? "Render" : "Loading WASM..."}
+          </button>
+        )}
 
         <DownloadButtons onEnsureRendered={ensureRendered3D} />
       </div>
