@@ -128,25 +128,14 @@ async function generateDerivedSvgs() {
   }
 
   // ── Hexhead fragments ──────────────────────────────────────
-  // Mirror the head-* drive variants but with hexhead outer shape.
-  const driveVariants = [
-    { name: "hexhead-phillips", label: "Hex Phillips", args: ["phillips"] },
-    { name: "hexhead-pozidrive", label: "Hex Pozidrive", args: ["pozidrive"] },
-    { name: "hexhead-slot", label: "Hex Slot", args: ["slot"] },
-    { name: "hexhead-hex", label: "Hex Hex", args: ["hex"] },
-    { name: "hexhead-cross", label: "Hex Cross", args: ["cross"] },
-    { name: "hexhead-square", label: "Hex Square", args: ["square"] },
-    { name: "hexhead-triangle", label: "Hex Triangle", args: ["triangle"] },
-    { name: "hexhead-torx", label: "Hex Torx", args: ["torx"] },
-    { name: "hexhead-security", label: "Hex Security", args: ["security"] },
-    { name: "hexhead-slot-triangle", label: "Hex Slot + Triangle", args: ["slot", "triangle"] },
-    { name: "hexhead-slot-square", label: "Hex Slot + Square", args: ["slot", "square"] },
-    { name: "hexhead-torx-security", label: "Hex Torx + Security", args: ["torx", "security"] },
+  // Only plain and slotted; all other drive variants available via spec input.
+  const hexheadVariants: { name: string; label: string; args: string[]; spec: string }[] = [
+    { name: "hexhead", label: "Hex Head", args: [], spec: "{hexhead}" },
+    { name: "hexhead-slot", label: "Hex Head (Slot)", args: ["slot"], spec: "{hexhead(slot)}" },
   ];
 
   console.log("Hexhead fragments:");
-  for (const { name, label, args } of driveVariants) {
-    const spec = `{hexhead(${args.join(",")})}`;
+  for (const { name, label, args, spec } of hexheadVariants) {
     renderAndWrite(name, label, spec, "Screw Heads", "hexhead", args);
   }
 }
