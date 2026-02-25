@@ -395,71 +395,30 @@ function contourToDrawing(points: [number, number][]): Drawing {
  * contours with the opposite sign are holes (cut from their containing
  * outer, matched by bounding-box containment).
  */
-export function contoursToDrawing(contours: Contour[]): Drawing {
-  if (contours.length === 0) return drawRectangle(0.001, 0.001);
-  if (contours.length === 1) return contourToDrawing(contours[0]!.points);
+type Ring = [number, number][];
+type Polygon = Ring[]; // [outer, ...holes]
+type MultiPolygon = Polygon[];
 
-  // Classify contours into outers vs holes by winding direction.
-  // The largest contour (by absolute area) defines the outer winding.
-  const areas = contours.map((c) => signedArea(c.points));
-  let largestIdx = 0;
-  for (let i = 1; i < areas.length; i++) {
-    if (Math.abs(areas[i]!) > Math.abs(areas[largestIdx]!)) {
-      largestIdx = i;
-    }
+interface BB { minX: number; maxX: number; minY: number; maxY: number }
+
+function bbox(pts: Ring): BB {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [x, y] of pts) {
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
   }
-  const outerSign = Math.sign(areas[largestIdx]!);
+  return { minX, maxX, minY, maxY };
+}
 
-  type Ring = [number, number][];
-  const outerRings: Ring[] = [];
-  const holeRings: Ring[] = [];
-
-  for (let i = 0; i < contours.length; i++) {
-    if (outerSign !== 0 && Math.sign(areas[i]!) !== outerSign) {
-      holeRings.push(contours[i]!.points);
-    } else {
-      outerRings.push(contours[i]!.points);
-    }
-  }
-
-  // Use polygon-clipping to compute the union of all outers, then
-  // subtract holes.  This bypasses OpenCascade 2D booleans entirely,
-  // avoiding crashes on near-tangent intersections.
-  type PC = [number, number][][];
-  let multiPoly: PC[] = outerRings.map((r) => [closeRing(r)]);
-  if (multiPoly.length > 1) {
-    multiPoly = polygonClipping.union(multiPoly[0]!, ...multiPoly.slice(1));
-  }
-
-  if (holeRings.length > 0) {
-    // Pair each hole with its containing polygon via bounding box,
-    // then subtract.
-    const holePoly: PC[] = holeRings.map((r) => [closeRing(r)]);
-    multiPoly = polygonClipping.difference(
-      // Flatten into a single multipolygon for the subject
-      multiPoly as Parameters<typeof polygonClipping.difference>[0],
-      ...holePoly,
-    );
-  }
-
-  // Convert the resulting multipolygon back to Drawings.
-  // Each polygon in the result is an outer ring + optional hole rings.
-  let result: Drawing | null = null;
-  for (const polygon of multiPoly) {
-    const outerPts = openRing(polygon[0]!);
-    let drawing = contourToDrawing(outerPts);
-    // Cut hole rings
-    for (let h = 1; h < polygon.length; h++) {
-      const holePts = openRing(polygon[h]!);
-      drawing = drawing.cut(contourToDrawing(holePts));
-    }
-    result = result ? result.fuse(drawing) : drawing;
-  }
-  return result ?? drawRectangle(0.001, 0.001);
+function bbContains(outer: BB, inner: BB): boolean {
+  return outer.minX <= inner.minX && outer.maxX >= inner.maxX &&
+         outer.minY <= inner.minY && outer.maxY >= inner.maxY;
 }
 
 /** Ensure a ring is closed (first point == last point) for polygon-clipping. */
-function closeRing(pts: [number, number][]): [number, number][] {
+function closeRing(pts: Ring): Ring {
   if (pts.length === 0) return pts;
   const [fx, fy] = pts[0]!;
   const [lx, ly] = pts[pts.length - 1]!;
@@ -470,7 +429,7 @@ function closeRing(pts: [number, number][]): [number, number][] {
 }
 
 /** Remove closing duplicate point for contourToDrawing. */
-function openRing(pts: [number, number][]): [number, number][] {
+function openRing(pts: Ring): Ring {
   if (pts.length < 2) return pts;
   const [fx, fy] = pts[0]!;
   const [lx, ly] = pts[pts.length - 1]!;
@@ -481,25 +440,123 @@ function openRing(pts: [number, number][]): [number, number][] {
 }
 
 /**
+ * Convert contours from a single SVG path into polygons (for polygon-clipping).
+ *
+ * Classifies contours as outers vs holes by winding direction, then pairs
+ * each hole with its smallest containing outer via bounding-box containment.
+ * Returns an array of polygons, each being [outerRing, ...holeRings].
+ */
+function contoursToPolygons(contours: Contour[]): MultiPolygon {
+  if (contours.length === 0) return [];
+
+  const areas = contours.map((c) => signedArea(c.points));
+
+  // Single contour — just an outer
+  if (contours.length === 1) {
+    return [[closeRing(contours[0]!.points)]];
+  }
+
+  // Largest contour by absolute area defines the outer winding direction
+  let largestIdx = 0;
+  for (let i = 1; i < areas.length; i++) {
+    if (Math.abs(areas[i]!) > Math.abs(areas[largestIdx]!)) {
+      largestIdx = i;
+    }
+  }
+  const outerSign = Math.sign(areas[largestIdx]!);
+
+  interface RingInfo { ring: Ring; area: number; bb: BB; holes: Ring[] }
+
+  const outers: RingInfo[] = [];
+  const holes: { ring: Ring; area: number; bb: BB }[] = [];
+
+  for (let i = 0; i < contours.length; i++) {
+    const pts = contours[i]!.points;
+    const info = { ring: closeRing(pts), area: areas[i]!, bb: bbox(pts) };
+    if (outerSign !== 0 && Math.sign(areas[i]!) !== outerSign) {
+      holes.push(info);
+    } else {
+      outers.push({ ...info, holes: [] });
+    }
+  }
+
+  // Pair each hole with its smallest containing outer via bounding box
+  for (const hole of holes) {
+    let bestIdx = -1;
+    let bestArea = Infinity;
+    for (let i = 0; i < outers.length; i++) {
+      if (bbContains(outers[i]!.bb, hole.bb)) {
+        const absArea = Math.abs(outers[i]!.area);
+        if (absArea < bestArea) {
+          bestArea = absArea;
+          bestIdx = i;
+        }
+      }
+    }
+    if (bestIdx >= 0) {
+      outers[bestIdx]!.holes.push(hole.ring);
+    }
+  }
+
+  return outers.map((o) => [o.ring, ...o.holes]);
+}
+
+/** Convert a polygon-clipping MultiPolygon result into a single Drawing. */
+function multiPolygonToDrawing(mp: MultiPolygon): Drawing {
+  let result: Drawing | null = null;
+  for (const polygon of mp) {
+    const outerPts = openRing(polygon[0]!);
+    let drawing = contourToDrawing(outerPts);
+    for (let h = 1; h < polygon.length; h++) {
+      const holePts = openRing(polygon[h]!);
+      drawing = drawing.cut(contourToDrawing(holePts));
+    }
+    result = result ? result.fuse(drawing) : drawing;
+  }
+  return result ?? drawRectangle(0.001, 0.001);
+}
+
+/**
+ * Convert contours from a single SVG path `d` attribute into a Drawing.
+ */
+export function contoursToDrawing(contours: Contour[]): Drawing {
+  const polygons = contoursToPolygons(contours);
+  if (polygons.length === 0) return drawRectangle(0.001, 0.001);
+  return multiPolygonToDrawing(polygons);
+}
+
+
+/**
  * Parse an SVG string and convert all <path> elements to a single Drawing.
  *
- * Each <path> element is processed independently through contoursToDrawing
- * (respecting per-path SVG fill semantics), then all per-path Drawings are
- * fused together. This prevents holes in one path from subtracting geometry
- * that belongs to a separate path (e.g. transistor body inside a circle ring).
+ * Each <path> element is independently classified into polygons (outers with
+ * paired holes via bounding-box containment), then all polygons are unioned
+ * via polygon-clipping. Only the final result is converted to a replicad
+ * Drawing, avoiding OpenCascade 2D boolean fragility on thin/near-tangent
+ * geometry.
  */
 export function svgToDrawing(svgString: string): Drawing {
   const pathRe = /<path[^>]*\bd="([^"]+)"/g;
   let m: RegExpExecArray | null;
 
-  let result: Drawing | null = null;
+  // Collect polygons from all <path> elements
+  let accumulated: MultiPolygon = [];
   while ((m = pathRe.exec(svgString)) !== null) {
     const contours = parseSvgPathD(m[1]!);
     if (contours.length === 0) continue;
-    const drawing = contoursToDrawing(contours);
-    result = result ? result.fuse(drawing) : drawing;
+    const polygons = contoursToPolygons(contours);
+    accumulated.push(...polygons);
   }
 
-  if (!result) return drawRectangle(0.001, 0.001);
-  return result;
+  if (accumulated.length === 0) return drawRectangle(0.001, 0.001);
+
+  // Union all polygons in polygon-clipping (robust 2D booleans)
+  if (accumulated.length > 1) {
+    accumulated = polygonClipping.union(
+      accumulated[0]! as Parameters<typeof polygonClipping.union>[0],
+      ...accumulated.slice(1),
+    );
+  }
+
+  return multiPolygonToDrawing(accumulated);
 }
