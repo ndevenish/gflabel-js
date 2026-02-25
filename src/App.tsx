@@ -17,7 +17,7 @@ export function App() {
   const [lockedBaseType, setLockedBaseType] = React.useState<BaseType | undefined>(parseRouteBaseType);
   const [meshData, setMeshData] = React.useState<MeshData | null>(null);
   const [svgData, setSvgData] = React.useState<string | null>(null);
-  const [previewMode, setPreviewMode] = React.useState<PreviewMode>("svg");
+  const [previewMode, setPreviewMode] = React.useState<PreviewMode>("3d");
   const [isRendering, setIsRendering] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 

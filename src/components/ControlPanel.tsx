@@ -32,7 +32,7 @@ const DEFAULTS: Settings = {
   style: LabelStyle.EMBOSSED,
   spec: "{nut}M3",
   autoRender: true,
-  previewMode: "svg",
+  previewMode: "3d",
 };
 
 function loadSettings(): Settings {
