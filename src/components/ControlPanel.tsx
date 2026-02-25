@@ -113,8 +113,9 @@ export function ControlPanel({
   }, [baseType, width, height, version, style, spec, autoRender, previewMode]);
 
   const resetSettings = () => {
-    setBaseType(DEFAULTS.baseType);
-    setWidth(DEFAULTS.width);
+    const resetBase = lockedBaseType ?? DEFAULTS.baseType;
+    setBaseType(resetBase);
+    setWidth(defaultWidth(resetBase));
     setHeight(DEFAULTS.height);
     setVersion(DEFAULTS.version);
     setStyle(DEFAULTS.style);
