@@ -78,6 +78,78 @@
     "category": "Screw Heads"
   },
   {
+    "name": "hexhead-cross",
+    "label": "Hex Cross",
+    "spec": "{hexhead(cross)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-hex",
+    "label": "Hex Hex",
+    "spec": "{hexhead(hex)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-phillips",
+    "label": "Hex Phillips",
+    "spec": "{hexhead(phillips)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-pozidrive",
+    "label": "Hex Pozidrive",
+    "spec": "{hexhead(pozidrive)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-security",
+    "label": "Hex Security",
+    "spec": "{hexhead(security)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-slot-square",
+    "label": "Hex Slot + Square",
+    "spec": "{hexhead(slot,square)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-slot-triangle",
+    "label": "Hex Slot + Triangle",
+    "spec": "{hexhead(slot,triangle)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-slot",
+    "label": "Hex Slot",
+    "spec": "{hexhead(slot)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-square",
+    "label": "Hex Square",
+    "spec": "{hexhead(square)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-torx-security",
+    "label": "Hex Torx + Security",
+    "spec": "{hexhead(torx,security)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-torx",
+    "label": "Hex Torx",
+    "spec": "{hexhead(torx)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-triangle",
+    "label": "Hex Triangle",
+    "spec": "{hexhead(triangle)}",
+    "category": "Screw Heads"
+  },
+  {
     "name": "locknut_profile",
     "label": "Lock Nut Profile",
     "spec": "{locknut_profile}",

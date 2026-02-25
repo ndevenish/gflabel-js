@@ -1,14 +1,16 @@
 #!/usr/bin/env npx tsx
 /**
- * Generate the fragment palette manifest from source SVG files.
+ * Generate derived fragment SVGs and the palette manifest.
  *
- * Hardware and screw-head SVGs embed their metadata as data-* attributes
- * on the <svg> root element. Symbol SVGs use a separate manifest.json.
+ * Source SVGs (hardware, screw heads) embed metadata as data-* attributes.
+ * This script generates any derived fragments (e.g. hexhead variants from
+ * head drive types) via the CAD pipeline, then builds the unified manifest.
  *
  * Usage:  npx tsx scripts/gen-fragment-icons.ts
  *
  * Outputs:
- *   src/assets/fragments/manifest.json — metadata for the palette UI
+ *   src/assets/fragments/hexhead-*.svg  — generated hexhead SVGs
+ *   src/assets/fragments/manifest.json  — metadata for the palette UI
  */
 
 import { resolve, dirname } from "path";
@@ -35,11 +37,126 @@ const dataLabelRe = /data-label="([^"]+)"/;
 const dataSpecRe = /data-spec="([^"]+)"/;
 const dataCategoryRe = /data-category="([^"]+)"/;
 
-function main() {
+// ── CAD pipeline init ─────────────────────────────────────────
+
+async function initCAD() {
+  const { setOC } = await import("replicad");
+  const opencascadeModule = await import(
+    "replicad-opencascadejs/src/replicad_single.js"
+  );
+  const opencascade = opencascadeModule.default;
+  const wasmPath = resolve(
+    ROOT,
+    "node_modules/replicad-opencascadejs/src/replicad_single.wasm",
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const OC = (await opencascade({ locateFile: () => wasmPath })) as any;
+  setOC(OC);
+
+  // Load font
+  const { loadFont } = await import("../src/cad/font.js");
+  const fontPath = resolve(ROOT, "src/assets/OpenSans-Regular.ttf");
+  const fontData = readFileSync(fontPath);
+  await loadFont(
+    fontData.buffer.slice(
+      fontData.byteOffset,
+      fontData.byteOffset + fontData.byteLength,
+    ),
+  );
+
+  // Load symbols
+  const { loadSymbols } = await import("../src/cad/fragments/symbols.js");
+  const symbolsDir = resolve(ROOT, "src/assets/fragments/symbols");
+  const symbolManifest = JSON.parse(
+    readFileSync(resolve(symbolsDir, "manifest.json"), "utf-8"),
+  );
+  loadSymbols(symbolManifest, (id: string) =>
+    readFileSync(resolve(symbolsDir, `${id}.svg`), "utf-8"),
+  );
+
+  // Load SVG-based hardware fragments
+  const { loadSvgFragments } = await import(
+    "../src/cad/fragments/svgFragments.js"
+  );
+  loadSvgFragments((name: string) =>
+    readFileSync(resolve(OUT_DIR, `${name}.svg`), "utf-8"),
+  );
+
+  // Register all fragments
+  await import("../src/cad/fragments/index.js");
+}
+
+// ── Fragment rendering ────────────────────────────────────────
+
+async function generateDerivedSvgs() {
+  const { FRAGMENT_REGISTRY } = await import("../src/cad/fragments/base.js");
+  const { drawingToFilledSVG } = await import("../src/cad/font.js");
+  const { DEFAULT_RENDER_OPTIONS } = await import("../src/cad/options.js");
+
+  const height = 8;
+  const maxWidth = 20;
+
+  function renderAndWrite(
+    name: string,
+    label: string,
+    spec: string,
+    category: string,
+    fragName: string,
+    fragArgs: string[],
+  ): boolean {
+    const factory = FRAGMENT_REGISTRY.get(fragName);
+    if (!factory) {
+      console.warn(`  SKIP "${name}" — "${fragName}" not in registry`);
+      return false;
+    }
+    try {
+      const fragment = factory(...fragArgs);
+      const result = fragment.render(height, maxWidth, DEFAULT_RENDER_OPTIONS);
+      if (!result.drawing) {
+        console.warn(`  SKIP "${name}" — no drawing`);
+        return false;
+      }
+      const meta = { name, label, spec, category };
+      const svg = drawingToFilledSVG(result.drawing, 3, meta);
+      writeFileSync(resolve(OUT_DIR, `${name}.svg`), svg, "utf-8");
+      console.log(`  ${name}.svg`);
+      return true;
+    } catch (err) {
+      console.error(`  FAILED ${name}: ${err}`);
+      return false;
+    }
+  }
+
+  // ── Hexhead fragments ──────────────────────────────────────
+  // Mirror the head-* drive variants but with hexhead outer shape.
+  const driveVariants = [
+    { name: "hexhead-phillips", label: "Hex Phillips", args: ["phillips"] },
+    { name: "hexhead-pozidrive", label: "Hex Pozidrive", args: ["pozidrive"] },
+    { name: "hexhead-slot", label: "Hex Slot", args: ["slot"] },
+    { name: "hexhead-hex", label: "Hex Hex", args: ["hex"] },
+    { name: "hexhead-cross", label: "Hex Cross", args: ["cross"] },
+    { name: "hexhead-square", label: "Hex Square", args: ["square"] },
+    { name: "hexhead-triangle", label: "Hex Triangle", args: ["triangle"] },
+    { name: "hexhead-torx", label: "Hex Torx", args: ["torx"] },
+    { name: "hexhead-security", label: "Hex Security", args: ["security"] },
+    { name: "hexhead-slot-triangle", label: "Hex Slot + Triangle", args: ["slot", "triangle"] },
+    { name: "hexhead-slot-square", label: "Hex Slot + Square", args: ["slot", "square"] },
+    { name: "hexhead-torx-security", label: "Hex Torx + Security", args: ["torx", "security"] },
+  ];
+
+  console.log("Hexhead fragments:");
+  for (const { name, label, args } of driveVariants) {
+    const spec = `{hexhead(${args.join(",")})}`;
+    renderAndWrite(name, label, spec, "Screw Heads", "hexhead", args);
+  }
+}
+
+// ── Manifest generation ───────────────────────────────────────
+
+function buildManifest() {
   const manifest: ManifestEntry[] = [];
 
-  // ── Scan SVGs with embedded data-* metadata ────────────────
-  // (hardware fragments + screw heads)
+  // Scan SVGs with embedded data-* metadata
   for (const file of readdirSync(OUT_DIR).filter((f) => f.endsWith(".svg")).sort()) {
     const content = readFileSync(resolve(OUT_DIR, file), "utf-8");
     const nameMatch = dataNameRe.exec(content);
@@ -58,7 +175,7 @@ function main() {
   }
   console.log(`Found ${manifest.length} SVGs with embedded metadata`);
 
-  // ── Electrical symbols ─────────────────────────────────────
+  // Electrical symbols
   const symbolsDir = resolve(ROOT, "src/assets/fragments/symbols");
   const symbolManifest = JSON.parse(
     readFileSync(resolve(symbolsDir, "manifest.json"), "utf-8"),
@@ -84,4 +201,15 @@ function main() {
   console.log("Done.");
 }
 
-main();
+// ── Main ──────────────────────────────────────────────────────
+
+async function main() {
+  await initCAD();
+  await generateDerivedSvgs();
+  buildManifest();
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
