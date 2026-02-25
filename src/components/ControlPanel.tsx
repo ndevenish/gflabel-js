@@ -30,7 +30,7 @@ const DEFAULTS: Settings = {
   height: undefined,
   version: undefined,
   style: LabelStyle.EMBOSSED,
-  spec: "{nut}M3",
+  spec: "{head(hex)} {bolt(12)}\nM3 x 12",
   autoRender: true,
   previewMode: "3d",
 };
