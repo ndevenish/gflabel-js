@@ -446,15 +446,19 @@ function openRing(pts: Ring): Ring {
  * each hole with its smallest containing outer via bounding-box containment.
  * Returns an array of polygons, each being [outerRing, ...holeRings].
  */
-function contoursToPolygons(contours: Contour[]): MultiPolygon {
+function contoursToPolygons(contours: Contour[], fillRule: "nonzero" | "evenodd" = "nonzero"): MultiPolygon {
   if (contours.length === 0) return [];
-
-  const areas = contours.map((c) => signedArea(c.points));
 
   // Single contour — just an outer
   if (contours.length === 1) {
     return [[closeRing(contours[0]!.points)]];
   }
+
+  if (fillRule === "evenodd") {
+    return contoursToPolygonsEvenOdd(contours);
+  }
+
+  const areas = contours.map((c) => signedArea(c.points));
 
   // Largest contour by absolute area defines the outer winding direction
   let largestIdx = 0;
@@ -489,6 +493,68 @@ function contoursToPolygons(contours: Contour[]): MultiPolygon {
         const absArea = Math.abs(outers[i]!.area);
         if (absArea < bestArea) {
           bestArea = absArea;
+          bestIdx = i;
+        }
+      }
+    }
+    if (bestIdx >= 0) {
+      outers[bestIdx]!.holes.push(hole.ring);
+    }
+  }
+
+  return outers.map((o) => [o.ring, ...o.holes]);
+}
+
+/**
+ * Evenodd classification: contours are outers or holes based on nesting depth.
+ * Depth 0 = outer, depth 1 = hole, depth 2 = outer, etc.
+ * Nesting is determined by bounding-box containment, sorted by area (largest first).
+ */
+function contoursToPolygonsEvenOdd(contours: Contour[]): MultiPolygon {
+  const areas = contours.map((c) => Math.abs(signedArea(c.points)));
+  const bbs = contours.map((c) => bbox(c.points));
+  const rings = contours.map((c) => closeRing(c.points));
+
+  // Sort by area descending (largest first) so parents come before children
+  const indices = contours.map((_, i) => i);
+  indices.sort((a, b) => areas[b]! - areas[a]!);
+
+  // Compute nesting depth for each contour
+  const depth = new Array<number>(contours.length).fill(0);
+  for (let k = 0; k < indices.length; k++) {
+    const i = indices[k]!;
+    let d = 0;
+    // Count how many earlier (larger) contours contain this one
+    for (let j = 0; j < k; j++) {
+      const pi = indices[j]!;
+      if (bbContains(bbs[pi]!, bbs[i]!)) {
+        d++;
+      }
+    }
+    depth[i] = d;
+  }
+
+  // Even depth = outer, odd depth = hole
+  interface RingInfo { ring: Ring; area: number; bb: BB; holes: Ring[] }
+  const outers: RingInfo[] = [];
+  const holes: { ring: Ring; bb: BB }[] = [];
+
+  for (let i = 0; i < contours.length; i++) {
+    if (depth[i]! % 2 === 0) {
+      outers.push({ ring: rings[i]!, area: areas[i]!, bb: bbs[i]!, holes: [] });
+    } else {
+      holes.push({ ring: rings[i]!, bb: bbs[i]! });
+    }
+  }
+
+  // Pair each hole with its smallest containing outer
+  for (const hole of holes) {
+    let bestIdx = -1;
+    let bestArea = Infinity;
+    for (let i = 0; i < outers.length; i++) {
+      if (bbContains(outers[i]!.bb, hole.bb)) {
+        if (outers[i]!.area < bestArea) {
+          bestArea = outers[i]!.area;
           bestIdx = i;
         }
       }
@@ -536,15 +602,19 @@ export function contoursToDrawing(contours: Contour[]): Drawing {
  * geometry.
  */
 export function svgToDrawing(svgString: string): Drawing {
-  const pathRe = /<path[^>]*\bd="([^"]+)"/g;
+  const pathRe = /<path\b([^>]*)>/g;
   let m: RegExpExecArray | null;
 
   // Collect polygons from all <path> elements
   let accumulated: MultiPolygon = [];
   while ((m = pathRe.exec(svgString)) !== null) {
-    const contours = parseSvgPathD(m[1]!);
+    const attrs = m[1]!;
+    const dMatch = /\bd="([^"]+)"/.exec(attrs);
+    if (!dMatch) continue;
+    const fillRule = /fill-rule="evenodd"/.test(attrs) ? "evenodd" as const : "nonzero" as const;
+    const contours = parseSvgPathD(dMatch[1]!);
     if (contours.length === 0) continue;
-    const polygons = contoursToPolygons(contours);
+    const polygons = contoursToPolygons(contours, fillRule);
     accumulated.push(...polygons);
   }
 
