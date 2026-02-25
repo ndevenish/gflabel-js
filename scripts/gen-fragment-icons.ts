@@ -130,7 +130,8 @@ async function generateDerivedSvgs() {
   // ── Hexhead fragments ──────────────────────────────────────
   // Only plain and slotted; all other drive variants available via spec input.
   const hexheadVariants: { name: string; label: string; args: string[]; spec: string }[] = [
-    { name: "hexhead", label: "Hex Head", args: [], spec: "{hexhead}" },
+    { name: "hexhead-plain", label: "Hex Head", args: [], spec: "{hexhead}" },
+    { name: "hexhead-r", label: "Hex Head (Rotated)", args: ["r"], spec: "{hexhead(r)}" },
     { name: "hexhead-slot", label: "Hex Head (Slot)", args: ["slot"], spec: "{hexhead(slot)}" },
   ];
 

@@ -78,15 +78,21 @@
     "category": "Screw Heads"
   },
   {
-    "name": "hexhead-slot",
-    "label": "Hex Head (Slot)",
-    "spec": "{hexhead(slot)}",
+    "name": "hexhead-plain",
+    "label": "Hex Head",
+    "spec": "{hexhead}",
     "category": "Screw Heads"
   },
   {
-    "name": "hexhead",
-    "label": "Hex Head",
-    "spec": "{hexhead}",
+    "name": "hexhead-r",
+    "label": "Hex Head (Rotated)",
+    "spec": "{hexhead(r)}",
+    "category": "Screw Heads"
+  },
+  {
+    "name": "hexhead-slot",
+    "label": "Hex Head (Slot)",
+    "spec": "{hexhead(slot)}",
     "category": "Screw Heads"
   },
   {

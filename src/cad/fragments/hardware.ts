@@ -166,14 +166,19 @@ function drawingWidth(d: Drawing): number {
 
 // ── Hexhead Fragment ──────────────────────────────────────────
 
-registerFragment(["hexhead"], (...drives: string[]) => {
+registerFragment(["hexhead"], (...args: string[]) => {
+  const rotated = args.includes("r");
+  const drives = args.filter((a) => a !== "r");
+
   return new (class extends Fragment {
     render(
       height: number,
       _maxWidth: number,
       _opts: RenderOptions,
     ): FragmentRenderResult {
-      let drawing: Drawing = drawPolysides(height / 2, 6).rotate(30);
+      // Default orientation is flat-top (rotate 30°); "r" gives pointy-top
+      const baseRotation = rotated ? 0 : 30;
+      let drawing: Drawing = drawPolysides(height / 2, 6).rotate(baseRotation);
       if (drives.length > 0) {
         const driveDrawing = compoundDriveShape(
           drives,
