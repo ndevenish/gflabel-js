@@ -10,9 +10,15 @@ import opencascade from "replicad-opencascadejs/src/replicad_single.js";
 import wasmUrl from "replicad-opencascadejs/src/replicad_single.wasm?url";
 
 import fontUrl from "../assets/OpenSans-Regular.ttf?url";
-import symbolsZipUrl from "../assets/chris-pikul-symbols.zip?url";
 import { loadFont } from "./font.js";
-import { loadSymbolsZip } from "./fragments/symbols.js";
+import { loadSymbols } from "./fragments/symbols.js";
+import symbolManifest from "../assets/fragments/symbols/manifest.json";
+
+const symbolSvgs = import.meta.glob("../assets/fragments/symbols/*.svg", {
+  eager: true,
+  import: "default",
+  query: "?raw",
+}) as Record<string, string>;
 import { LabelRenderer, renderDividedLabel } from "./label.js";
 import { buildBase, extrudeLabel } from "./bases/index.js";
 import type { BaseConfig } from "./bases/index.js";
@@ -107,10 +113,13 @@ async function init(): Promise<void> {
   const fontData = await fontResponse.arrayBuffer();
   await loadFont(fontData);
 
-  // Load symbol ZIP
-  const zipResponse = await fetch(symbolsZipUrl);
-  const zipData = await zipResponse.arrayBuffer();
-  loadSymbolsZip(new Uint8Array(zipData));
+  // Load symbols
+  loadSymbols(symbolManifest, (id) => {
+    const key = `../assets/fragments/symbols/${id}.svg`;
+    const svg = symbolSvgs[key];
+    if (!svg) throw new Error(`Symbol SVG not found: ${key}`);
+    return svg;
+  });
 
   const msg: ReadyResponse = { type: "READY" };
   self.postMessage(msg);

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 150 150"
+   version="1.1"
+   id="svg2032"
+   sodipodi:docname="Resistor-IEC-Thermistor.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs2036" />
+  <sodipodi:namedview
+     id="namedview2034"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <path
+     style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+     d="m 22.5,53.75 v 2.5 16.25 H 0 v 5 h 22.5 v 18.75 h 105 V 77.5 H 150 v -5 H 127.5 V 53.75 Z m 5,5 h 95 v 32.5 h -95 z"
+     id="path2026" />
+  <path
+     style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+     d="M 107.33594,32.892578 42.583984,110 H 12.5 v 5 H 44.916016 L 111.16406,36.107422 Z"
+     id="path2028" />
+  <path
+     d="M111.34 117.86v4H108v7.6a20.75 20.75 0 0 0 .09 2.7 1.14 1.14 0 0 0 .44.63 1.38 1.38 0 0 0 .82.25 9.4 9.4 0 0 0 2.45-.57v3.88a9.85 9.85 0 0 1-3.93.83 5.88 5.88 0 0 1-2.38-.46 3.46 3.46 0 0 1-1.56-1.17 4.74 4.74 0 0 1-.69-1.95 25.69 25.69 0 0 1-.15-3.51v-8.23h-3.31v-4h3.31v-7H108v7Zm2.33-6.28a5.53 5.53 0 0 1 1.63-4 5.33 5.33 0 0 1 3.93-1.65 5.27 5.27 0 0 1 3.92 1.66 5.74 5.74 0 0 1 0 8 5.45 5.45 0 0 1-7.85 0 5.52 5.52 0 0 1-1.63-4.01Zm2.89 0a2.64 2.64 0 0 0 .79 1.92 2.63 2.63 0 0 0 3.76 0 2.67 2.67 0 0 0 .78-1.92 2.64 2.64 0 0 0-.78-1.92 2.61 2.61 0 0 0-3.76 0 2.61 2.61 0 0 0-.79 1.92Z"
+     id="path2030" />
+</svg>

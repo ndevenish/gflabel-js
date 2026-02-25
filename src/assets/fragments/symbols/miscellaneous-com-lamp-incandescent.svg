@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 150 150"
+   version="1.1"
+   id="svg1266"
+   sodipodi:docname="Miscellaneous-COM-Lamp-Incandescent.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1270" />
+  <sodipodi:namedview
+     id="namedview1268"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <g
+     fill="none"
+     stroke="#000"
+     stroke-miterlimit="10"
+     stroke-width="5"
+     id="g1264">
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="m 75,22.5 c -28.965309,0 -52.5,23.534691 -52.5,52.5 0,28.96531 23.534691,52.5 52.5,52.5 28.96531,0 52.5,-23.53469 52.5,-52.5 0,-28.965309 -23.53469,-52.5 -52.5,-52.5 z m 0,5 c 26.26311,0 47.5,21.236889 47.5,47.5 0,26.26311 -21.23689,47.5 -47.5,47.5 C 48.736889,122.5 27.5,101.26311 27.5,75 27.5,48.736889 48.736889,27.5 75,27.5 Z"
+       id="circle1260" />
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="M 75,47.5 C 61.66668,47.5 54.311811,54.536535 50.888672,61.382812 48.474211,66.211734 47.941798,70.09531 47.742187,72.5 H 0 v 5 H 52.5 V 75 c 0,0 0.03447,-5.729103 2.861328,-11.382813 C 58.188183,57.963478 63.333345,52.5 75,52.5 86.666655,52.5 91.811817,57.963478 94.638672,63.617187 97.465527,69.270897 97.5,75 97.5,75 v 2.5 H 150 v -5 H 102.25781 C 102.0582,70.09531 101.52579,66.211734 99.111328,61.382812 95.688189,54.536535 88.33332,47.5 75,47.5 Z"
+       id="path1262" />
+  </g>
+</svg>

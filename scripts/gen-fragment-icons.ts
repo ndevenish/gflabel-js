@@ -14,7 +14,6 @@
 import { resolve, dirname } from "path";
 import { writeFileSync, readFileSync, mkdirSync, readdirSync } from "fs";
 import { fileURLToPath } from "url";
-import { unzipSync } from "fflate";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
@@ -57,18 +56,15 @@ async function main() {
     ),
   );
 
-  // Load symbols ZIP
-  const zipPath = resolve(ROOT, "src/assets/chris-pikul-symbols.zip");
-  const zipBytes = readFileSync(zipPath);
-  const zipUint8 = new Uint8Array(
-    zipBytes.buffer.slice(
-      zipBytes.byteOffset,
-      zipBytes.byteOffset + zipBytes.byteLength,
-    ),
+  // Load symbols
+  const { loadSymbols } = await import("../src/cad/fragments/symbols.js");
+  const symbolsDir = resolve(ROOT, "src/assets/fragments/symbols");
+  const symbolManifest = JSON.parse(
+    readFileSync(resolve(symbolsDir, "manifest.json"), "utf-8"),
+  ) as Array<{ id: string; name: string; category: string; standard: string; filename: string }>;
+  loadSymbols(symbolManifest, (id) =>
+    readFileSync(resolve(symbolsDir, `${id}.svg`), "utf-8"),
   );
-
-  const { loadSymbolsZip } = await import("../src/cad/fragments/symbols.js");
-  loadSymbolsZip(zipUint8);
 
   // Register all fragments
   await import("../src/cad/fragments/index.js");
@@ -165,16 +161,6 @@ async function main() {
   }
 
   // ── Electrical symbols (rendered via {sym(id)} fragment) ────
-  const unzipped = unzipSync(zipUint8);
-  const symbolManifest = JSON.parse(
-    new TextDecoder().decode(unzipped["manifest.json"]),
-  ) as Array<{
-    id: string;
-    name: string;
-    category: string;
-    standard: string;
-    filename: string;
-  }>;
 
   console.log("\nElectrical symbols:");
   for (const item of symbolManifest) {

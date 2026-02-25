@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 150 150"
+   version="1.1"
+   id="svg926"
+   sodipodi:docname="IC-COM-Logic-NOR.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs930" />
+  <sodipodi:namedview
+     id="namedview928"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <g
+     fill="none"
+     stroke="#000"
+     stroke-miterlimit="10"
+     stroke-width="5"
+     id="g924">
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="m 26.578125,35 2.591797,3.886719 c 0,0 2.137763,3.566643 4.52539,8.423828 H 0 v 5 H 36.009766 C 38.735,58.862495 41.25,66.97616 41.25,75 c 0,7.972014 -2.482856,16.029883 -5.1875,22.560547 H 0 v 5.000003 h 33.759766 c -2.417263,4.93725 -4.589844,8.55273 -4.589844,8.55273 L 26.578125,115 H 56.25 c 39.166628,0 58.48633,-38.882812 58.48633,-38.882813 L 115.29492,75 114.73633,73.882812 C 114.73633,73.882812 95.416628,35 56.25,35 Z m 9.080078,5 H 56.25 c 34.059213,0 51.62998,31.769 53.33984,35 -1.70986,3.231 -19.280627,35 -53.33984,35 H 35.658203 C 39.366303,103.49958 46.25,89.55167 46.25,75 46.25,60.44833 39.366303,46.500422 35.658203,40 Z M 134.5,72.630859 v 5 H 150 v -5 z"
+       id="path920" />
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="M 124.88086,63.119141 C 118.34933,63.119141 113,68.468475 113,75 c 0,6.531525 5.34933,11.880859 11.88086,11.880859 6.53152,0 11.87891,-5.349334 11.87891,-11.880859 0,-6.531525 -5.34739,-11.880859 -11.87891,-11.880859 z m 0,5 c 3.82933,0 6.87891,3.051532 6.87891,6.880859 0,3.829327 -3.04958,6.880859 -6.87891,6.880859 C 121.05153,81.880859 118,78.829327 118,75 c 0,-3.829327 3.05153,-6.880859 6.88086,-6.880859 z"
+       id="circle922" />
+  </g>
+</svg>

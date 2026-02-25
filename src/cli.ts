@@ -44,20 +44,17 @@ async function main() {
     ),
   );
 
-  // Load symbol ZIP
-  const { loadSymbolsZip } = await import("./cad/fragments/symbols.js");
-  const zipPath = resolve(
+  // Load symbols
+  const { loadSymbols } = await import("./cad/fragments/symbols.js");
+  const symbolsDir = resolve(
     fileURLToPath(import.meta.url),
-    "../assets/chris-pikul-symbols.zip",
+    "../assets/fragments/symbols",
   );
-  const zipData = readFileSync(zipPath);
-  loadSymbolsZip(
-    new Uint8Array(
-      zipData.buffer.slice(
-        zipData.byteOffset,
-        zipData.byteOffset + zipData.byteLength,
-      ),
-    ),
+  const symbolManifest = JSON.parse(
+    readFileSync(resolve(symbolsDir, "manifest.json"), "utf-8"),
+  );
+  loadSymbols(symbolManifest, (id) =>
+    readFileSync(resolve(symbolsDir, `${id}.svg`), "utf-8"),
   );
 
   // Import fragment index to trigger registrations

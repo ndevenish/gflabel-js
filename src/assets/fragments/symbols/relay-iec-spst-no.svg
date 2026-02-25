@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 150 150"
+   version="1.1"
+   id="svg1710"
+   sodipodi:docname="Relay-IEC-SPST-NO.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1714" />
+  <sodipodi:namedview
+     id="namedview1712"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <g
+     fill="none"
+     stroke="#000"
+     stroke-miterlimit="10"
+     stroke-width="5"
+     id="g1708">
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="m 60,28.75 v 2.5 16.25 H 0 v 5 H 60 V 71.25 H 90 V 52.5 h 60 v -5 H 90 V 28.75 Z m 5,5 h 20 v 32.5 H 65 Z M 99.123047,78.908203 49.548828,97.498047 0.00585938,97.380859 -0.00585938,102.38086 50.451172,102.50195 100.87695,83.591797 Z M 100,97.5 v 5 h 50 v -5 z"
+       id="path1704" />
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;stroke-dasharray:5;-inkscape-stroke:none"
+       d="m 72.5,68.75 v 5 h 5 v -5 z m 0,10 v 5 h 5 v -5 z"
+       id="path1706" />
+  </g>
+</svg>

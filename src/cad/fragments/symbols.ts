@@ -1,7 +1,7 @@
 /**
  * Electronic symbol fragments: {symbol(...)} / {sym(...)}.
  *
- * Loads symbols from a bundled ZIP of SVGs (chris-pikul-symbols.zip).
+ * Loads symbols from pre-extracted SVG files via an injected loader.
  * Port of the symbol matching and rendering from Python gflabel.
  */
 
@@ -10,11 +10,10 @@ import type { RenderOptions } from "../options.js";
 import { Fragment, registerFragment } from "./base.js";
 import type { FragmentRenderResult } from "./base.js";
 import { svgToDrawing } from "../svg.js";
-import { unzipSync } from "fflate";
 
 // ── Types ──────────────────────────────────────────────────────
 
-interface ManifestItem {
+export interface ManifestItem {
   id: string;
   name: string;
   category: string;
@@ -24,45 +23,29 @@ interface ManifestItem {
 
 // ── Module state ───────────────────────────────────────────────
 
-let _zipData: Uint8Array | null = null;
 let _manifest: ManifestItem[] | null = null;
-let _unzipped: Record<string, Uint8Array> | null = null;
+let _svgLoader: ((id: string) => string) | null = null;
 
 /**
- * Initialize the symbol system with ZIP file data.
+ * Initialize the symbol system with manifest data and an SVG loader.
  * Called from worker.ts or cli.ts during init.
  */
-export function loadSymbolsZip(data: Uint8Array): void {
-  _zipData = data;
-  _unzipped = null;
-  _manifest = null;
-}
-
-function getUnzipped(): Record<string, Uint8Array> {
-  if (!_unzipped) {
-    if (!_zipData) throw new Error("Symbol ZIP not loaded — call loadSymbolsZip() first");
-    _unzipped = unzipSync(_zipData);
-  }
-  return _unzipped;
+export function loadSymbols(
+  manifest: ManifestItem[],
+  svgLoader: (id: string) => string,
+): void {
+  _manifest = manifest;
+  _svgLoader = svgLoader;
 }
 
 function getManifest(): ManifestItem[] {
-  if (!_manifest) {
-    const unzipped = getUnzipped();
-    const manifestBytes = unzipped["manifest.json"];
-    if (!manifestBytes) throw new Error("manifest.json not found in symbol ZIP");
-    const text = new TextDecoder().decode(manifestBytes);
-    _manifest = JSON.parse(text) as ManifestItem[];
-  }
+  if (!_manifest) throw new Error("Symbols not loaded — call loadSymbols() first");
   return _manifest;
 }
 
-function loadSvgFromZip(filename: string): string {
-  const unzipped = getUnzipped();
-  const key = `SVG/${filename}.svg`;
-  const data = unzipped[key];
-  if (!data) throw new Error(`Symbol SVG not found in ZIP: ${key}`);
-  return new TextDecoder().decode(data);
+function loadSvg(id: string): string {
+  if (!_svgLoader) throw new Error("Symbols not loaded — call loadSymbols() first");
+  return _svgLoader(id);
 }
 
 // ── Standard aliases and matching ──────────────────────────────
@@ -238,13 +221,12 @@ function matchSymbol(selectors: string[]): ManifestItem {
 // ── Fragment registration ──────────────────────────────────────
 
 registerFragment(["symbol", "sym"], (...selectors: string[]) => {
-  // Match and load the symbol eagerly so errors surface at parse time
-  if (!_zipData) {
-    throw new Error("Symbol ZIP not loaded — call loadSymbolsZip() first");
+  if (!_svgLoader) {
+    throw new Error("Symbols not loaded — call loadSymbols() first");
   }
 
   const item = matchSymbol(selectors);
-  const svgData = loadSvgFromZip(item.filename);
+  const svgData = loadSvg(item.id);
   const symbolDrawing = svgToDrawing(svgData);
 
   return new (class extends Fragment {

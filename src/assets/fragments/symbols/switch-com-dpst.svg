@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 150 150"
+   version="1.1"
+   id="svg2683"
+   sodipodi:docname="Switch-COM-DPST.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs2687" />
+  <sodipodi:namedview
+     id="namedview2685"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <g
+     fill="none"
+     stroke="#000"
+     stroke-miterlimit="10"
+     stroke-width="5"
+     id="g2681">
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="m 37.5,28.630859 c -4.802875,0 -8.75,3.947125 -8.75,8.75 0,4.802876 3.947125,8.75 8.75,8.75 4.802875,0 8.75,-3.947124 8.75,-8.75 0,-4.802875 -3.947125,-8.75 -8.75,-8.75 z m 0,5 c 2.100677,0 3.75,1.649323 3.75,3.75 0,2.100678 -1.649323,3.75 -3.75,3.75 -2.100677,0 -3.75,-1.649322 -3.75,-3.75 0,-2.100677 1.649323,-3.75 3.75,-3.75 z"
+       id="circle2657" />
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="m 0,34.810547 v 5 h 31.25 v -5 z"
+       id="path2659" />
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="m 112.5,28.630859 c -4.80288,0 -8.75,3.947125 -8.75,8.75 0,4.802876 3.94712,8.75 8.75,8.75 4.80288,0 8.75,-3.947124 8.75,-8.75 0,-4.802875 -3.94712,-8.75 -8.75,-8.75 z m 0,5 c 2.10068,0 3.75,1.649323 3.75,3.75 0,2.100678 -1.64932,3.75 -3.75,3.75 -2.10068,0 -3.75,-1.649322 -3.75,-3.75 0,-2.100677 1.64932,-3.75 3.75,-3.75 z"
+       id="circle2661" />
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="M 111.56055,3.9335938 42.810547,31.8125 44.689453,36.447266 113.43945,8.5664063 Z M 118.75,34.939453 v 5 H 150 v -5 z"
+       id="path2663" />
+    <g
+       data-name="Switch-DPST"
+       id="g2673">
+      <path
+         style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+         d="m 37.5,103.13086 c -4.802875,0 -8.75,3.94712 -8.75,8.75 0,4.80287 3.947125,8.75 8.75,8.75 4.802875,0 8.75,-3.94713 8.75,-8.75 0,-4.80288 -3.947125,-8.75 -8.75,-8.75 z m 0,5 c 2.100677,0 3.75,1.64932 3.75,3.75 0,2.10068 -1.649323,3.75 -3.75,3.75 -2.100677,0 -3.75,-1.64932 -3.75,-3.75 0,-2.10068 1.649323,-3.75 3.75,-3.75 z"
+         id="circle2665" />
+      <path
+         style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+         d="m 0,109.31055 v 5 h 31.25 v -5 z"
+         id="path2667" />
+      <path
+         style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+         d="m 112.5,103.13086 c -4.80288,0 -8.75,3.94712 -8.75,8.75 0,4.80287 3.94712,8.75 8.75,8.75 4.80288,0 8.75,-3.94713 8.75,-8.75 0,-4.80288 -3.94712,-8.75 -8.75,-8.75 z m 0,5 c 2.10068,0 3.75,1.64932 3.75,3.75 0,2.10068 -1.64932,3.75 -3.75,3.75 -2.10068,0 -3.75,-1.64932 -3.75,-3.75 0,-2.10068 1.64932,-3.75 3.75,-3.75 z"
+         id="circle2669" />
+      <path
+         style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+         d="m 111.57422,78.927734 -68.750001,27.378906 1.851562,4.64649 68.749999,-27.380864 z M 118.75,109.43945 v 5 H 150 v -5 z"
+         id="path2671" />
+    </g>
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="m 72.5,28.25 v 2.5 h 5 v -2.5 z"
+       id="path2675" />
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;stroke-dasharray:5.2, 5.2;-inkscape-stroke:none"
+       d="m 72.5,35.949219 v 5.201172 h 5 v -5.201172 z m 0,10.40039 v 5.201172 h 5 V 46.349609 Z M 72.5,56.75 v 5.199219 h 5 V 56.75 Z m 0,10.400391 v 5.199218 h 5 v -5.199218 z m 0,10.40039 V 82.75 h 5 v -5.199219 z"
+       id="path2677" />
+    <path
+       style="color:#000000;fill:#000000;stroke-miterlimit:10;-inkscape-stroke:none"
+       d="m 72.5,88 v 2.5 h 5 V 88 Z"
+       id="path2679" />
+  </g>
+</svg>
