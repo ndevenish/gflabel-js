@@ -12,9 +12,16 @@ import wasmUrl from "replicad-opencascadejs/src/replicad_single.wasm?url";
 import fontUrl from "../assets/OpenSans-Regular.ttf?url";
 import { loadFont } from "./font.js";
 import { loadSymbols } from "./fragments/symbols.js";
+import { loadSvgFragments } from "./fragments/svgFragments.js";
 import symbolManifest from "../assets/fragments/symbols/manifest.json";
 
 const symbolSvgs = import.meta.glob("../assets/fragments/symbols/*.svg", {
+  eager: true,
+  import: "default",
+  query: "?raw",
+}) as Record<string, string>;
+
+const fragmentSvgs = import.meta.glob("../assets/fragments/*.svg", {
   eager: true,
   import: "default",
   query: "?raw",
@@ -118,6 +125,14 @@ async function init(): Promise<void> {
     const key = `../assets/fragments/symbols/${id}.svg`;
     const svg = symbolSvgs[key];
     if (!svg) throw new Error(`Symbol SVG not found: ${key}`);
+    return svg;
+  });
+
+  // Load SVG-based hardware fragments
+  loadSvgFragments((name) => {
+    const key = `../assets/fragments/${name}.svg`;
+    const svg = fragmentSvgs[key];
+    if (!svg) throw new Error(`Fragment SVG not found: ${key}`);
     return svg;
   });
 

@@ -57,6 +57,16 @@ async function main() {
     readFileSync(resolve(symbolsDir, `${id}.svg`), "utf-8"),
   );
 
+  // Load SVG-based hardware fragments
+  const { loadSvgFragments } = await import("./cad/fragments/svgFragments.js");
+  const fragmentsDir = resolve(
+    fileURLToPath(import.meta.url),
+    "../assets/fragments",
+  );
+  loadSvgFragments((name) =>
+    readFileSync(resolve(fragmentsDir, `${name}.svg`), "utf-8"),
+  );
+
   // Import fragment index to trigger registrations
   await import("./cad/fragments/index.js");
 
