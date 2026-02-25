@@ -15,16 +15,18 @@ const manifest: ManifestEntry[] = manifestData.map((e) => ({
   category: KEEP_CATEGORIES.has(e.category) ? e.category : "Electronic Symbols",
 }));
 
-// Eagerly import all fragment SVGs via Vite glob — returns { path: url }
-const svgModules = import.meta.glob<string>(
+// Eagerly import all fragment SVGs as raw strings — inlined into the JS bundle
+const svgRawModules = import.meta.glob<string>(
   "../assets/fragments/*.svg",
-  { eager: true, import: "default" },
+  { eager: true, import: "default", query: "?raw" },
 );
 
-/** Resolve a manifest entry's name to its Vite-processed SVG URL. */
+/** Resolve a manifest entry's name to a data URI for its SVG. */
 function svgUrl(name: string): string | undefined {
   const key = `../assets/fragments/${name}.svg`;
-  return svgModules[key];
+  const raw = svgRawModules[key];
+  if (!raw) return undefined;
+  return `data:image/svg+xml,${encodeURIComponent(raw)}`;
 }
 
 // Build ordered list of unique categories, injecting builder sections after "Screw Heads"

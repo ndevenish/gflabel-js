@@ -317,10 +317,21 @@ export function glyphsToDrawing(text: string, sizeMm: number): Drawing {
   return result.translate([-cx, -cy]);
 }
 
+/** Round numeric values in an SVG string to `dp` decimal places. */
+function roundSvgNumbers(svg: string, dp: number): string {
+  return svg.replace(/-?\d+\.\d+/g, (m) => {
+    const n = parseFloat(m);
+    const r = n.toFixed(dp);
+    // Strip trailing zeros: "1.50" → "1.5", "2.00" → "2"
+    return r.replace(/\.?0+$/, "");
+  });
+}
+
 /**
  * Export a Drawing as a filled SVG string, matching Python's output style.
+ * Coordinates are rounded to `precision` decimal places (default 3 ≈ 0.001mm).
  */
-export function drawingToFilledSVG(drawing: Drawing): string {
+export function drawingToFilledSVG(drawing: Drawing, precision = 3): string {
   const vb = drawing.toSVGViewBox();
   const paths = drawing.toSVGPaths();
   // toSVGPaths returns string[][] — groups of path d-strings per face.
@@ -336,9 +347,8 @@ export function drawingToFilledSVG(drawing: Drawing): string {
     allD.length === 1
       ? `<path d="${allD[0]}" />`
       : `<path fill-rule="evenodd" d="${allD.join(" ")}" />`;
-  return `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" fill="black" stroke="none">
-    ${pathEl}
-</svg>`;
+  const raw = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" fill="black" stroke="none">${pathEl}</svg>`;
+  return roundSvgNumbers(raw, precision);
 }
 
 // Re-export Drawing-related helpers that fragments may use

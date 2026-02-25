@@ -2,15 +2,17 @@ import React from "react";
 import { renderSVG } from "../cad/workerClient.js";
 import { LabelStyle } from "../cad/options.js";
 
-// Eagerly import head SVGs for drive buttons
-const headSvgModules = import.meta.glob<string>(
+// Eagerly import head SVGs as raw strings — inlined into the JS bundle
+const headSvgRawModules = import.meta.glob<string>(
   "../assets/fragments/head-*.svg",
-  { eager: true, import: "default" },
+  { eager: true, import: "default", query: "?raw" },
 );
 
 function headSvgUrl(name: string): string | undefined {
   const key = `../assets/fragments/${name}.svg`;
-  return headSvgModules[key];
+  const raw = headSvgRawModules[key];
+  if (!raw) return undefined;
+  return `data:image/svg+xml,${encodeURIComponent(raw)}`;
 }
 
 const HEAD_SHAPES = [
