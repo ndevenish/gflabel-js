@@ -15,14 +15,21 @@ export function LabelSpecInput({ value, onChange, insertAtCursorRef }: Props) {
       insertAtCursorRef.current = (text: string) => {
         const el = textareaRef.current;
         if (!el) return;
-        const start = el.selectionStart;
-        const end = el.selectionEnd;
-        const before = value.slice(0, start);
-        const after = value.slice(end);
+        let pos = el.selectionEnd;
+        // If cursor is inside a {…} fragment, move past the closing brace
+        // so the insertion doesn't break the existing fragment.
+        const openBefore = value.lastIndexOf("{", pos - 1);
+        const closeBefore = value.lastIndexOf("}", pos - 1);
+        if (openBefore >= 0 && openBefore > closeBefore) {
+          const closeAfter = value.indexOf("}", pos);
+          if (closeAfter >= 0) pos = closeAfter + 1;
+        }
+        const before = value.slice(0, pos);
+        const after = value.slice(pos);
         onChange(before + text + after);
         // Restore cursor position after the inserted text
         requestAnimationFrame(() => {
-          el.selectionStart = el.selectionEnd = start + text.length;
+          el.selectionStart = el.selectionEnd = pos + text.length;
           el.focus();
         });
       };
