@@ -160,9 +160,9 @@ async function main() {
     renderAndWrite(name, label, spec, "Screw Heads", "head", args);
   }
 
-  // ── Electrical symbols (rendered via {sym(id)} fragment) ────
-
-  console.log("\nElectrical symbols:");
+  // ── Electrical symbols ─────────────────────────────────────
+  // Symbol palette icons use the raw source SVGs directly (no CAD rendering).
+  // We still need their manifest entries so they appear in the palette.
   for (const item of symbolManifest) {
     const safeName = `sym-${item.id}`;
     const stdSuffix =
@@ -170,15 +170,7 @@ async function main() {
     const label = `${item.name}${stdSuffix}`;
     const category =
       item.category.charAt(0) + item.category.slice(1).toLowerCase();
-
-    renderAndWrite(
-      safeName,
-      label,
-      `{sym(${item.id})}`,
-      category,
-      "sym",
-      [item.id],
-    );
+    manifest.push({ name: safeName, label, spec: `{sym(${item.id})}`, category });
   }
 
   // Scan SVGs for embedded metadata and prepend to manifest

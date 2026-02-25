@@ -17,6 +17,12 @@ const svgRawModules = import.meta.glob<string>(
   { eager: true, import: "default", query: "?raw" },
 );
 
+// Source symbol SVGs (used directly as palette icons instead of CAD-rendered previews)
+const symbolRawModules = import.meta.glob<string>(
+  "../assets/fragments/symbols/*.svg",
+  { eager: true, import: "default", query: "?raw" },
+);
+
 // Parse data-* attributes from SVG raw strings to auto-discover metadata
 function parseSvgMeta(raw: string): ManifestEntry | null {
   const get = (attr: string) => {
@@ -55,8 +61,15 @@ const manifest: ManifestEntry[] = (() => {
 
 /** Resolve a manifest entry's name to a data URI for its SVG. */
 function svgUrl(name: string): string | undefined {
-  const key = `../assets/fragments/${name}.svg`;
-  const raw = svgRawModules[key];
+  let raw: string | undefined;
+  if (name.startsWith("sym-")) {
+    // Use source symbol SVG directly instead of CAD-rendered preview
+    const key = `../assets/fragments/symbols/${name.slice(4)}.svg`;
+    raw = symbolRawModules[key];
+  } else {
+    const key = `../assets/fragments/${name}.svg`;
+    raw = svgRawModules[key];
+  }
   if (!raw) return undefined;
   return `data:image/svg+xml,${encodeURIComponent(raw)}`;
 }
