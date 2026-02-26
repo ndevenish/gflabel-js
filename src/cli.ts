@@ -30,19 +30,18 @@ async function main() {
   }) as any;
   setOC(OC);
 
-  // Load font
-  const { loadFont } = await import("./cad/font.js");
-  const fontPath = resolve(
-    fileURLToPath(import.meta.url),
-    "../assets/OpenSans-Regular.ttf",
-  );
-  const fontData = readFileSync(fontPath);
-  await loadFont(
-    fontData.buffer.slice(
-      fontData.byteOffset,
-      fontData.byteOffset + fontData.byteLength,
-    ),
-  );
+  // Load fonts
+  const { loadFont, loadFontNamed, setActiveFont } = await import("./cad/font.js");
+  const assetsDir = resolve(fileURLToPath(import.meta.url), "../assets");
+
+  function loadTtf(filename: string): ArrayBuffer {
+    const buf = readFileSync(resolve(assetsDir, filename));
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  }
+
+  await loadFont(loadTtf("OpenSans-Regular.ttf"));
+  await loadFontNamed("jost", loadTtf("Jost-500-Medium.ttf"));
+  await loadFontNamed("jost-semibold", loadTtf("Jost-600-Semi.ttf"));
 
   // Load symbols
   const { loadSymbols } = await import("./cad/fragments/symbols.js");
@@ -89,6 +88,7 @@ async function main() {
     .option("-d, --divisions <n>", "Divisions per label", "1")
     .option("--margin <mm>", "Margin in mm", "0.4")
     .option("--column-gap <mm>", "Column gap in mm", "0.4")
+    .option("--font <name>", "Font (open-sans, jost, jost-semibold)", "jost-semibold")
     .parse(process.argv);
 
   const opts = program.opts();
@@ -102,6 +102,7 @@ async function main() {
   // Parse options
   const { parseLabelStyle } = await import("./cad/options.js");
   const style = parseLabelStyle(opts.style);
+  setActiveFont(opts.font);
   const width = parseFloat(opts.width);
   const height = opts.height ? parseFloat(opts.height) : undefined;
   const depth = parseFloat(opts.depth);
