@@ -320,6 +320,7 @@ export function ControlPanel({
           >
             <option value="open-sans">Open Sans</option>
             <option value="jost">Jost</option>
+            <option value="jost-semibold">Jost Semibold</option>
           </select>
         </div>
 
