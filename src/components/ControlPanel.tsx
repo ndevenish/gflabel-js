@@ -31,7 +31,7 @@ const DEFAULTS: Settings = {
   height: undefined,
   version: undefined,
   style: LabelStyle.EMBOSSED,
-  font: "open-sans",
+  font: "jost-semibold",
   spec: "{head(hex)} {bolt(12)}\nM3 x 12",
   autoRender: true,
   previewMode: "3d",
