@@ -10,7 +10,8 @@ import opencascade from "replicad-opencascadejs/src/replicad_single.js";
 import wasmUrl from "replicad-opencascadejs/src/replicad_single.wasm?url";
 
 import fontUrl from "../assets/OpenSans-Regular.ttf?url";
-import { loadFont } from "./font.js";
+import jostFontUrl from "../assets/Jost-500-Medium.ttf?url";
+import { loadFont, loadFontNamed, setActiveFont } from "./font.js";
 import { loadSymbols } from "./fragments/symbols.js";
 import { loadSvgFragments } from "./fragments/svgFragments.js";
 import symbolManifest from "../assets/fragments/symbols/manifest.json";
@@ -115,10 +116,13 @@ async function init(): Promise<void> {
   });
   setOC(OC);
 
-  // Load font
-  const fontResponse = await fetch(fontUrl);
-  const fontData = await fontResponse.arrayBuffer();
+  // Load fonts
+  const [fontData, jostData] = await Promise.all([
+    fetch(fontUrl).then((r) => r.arrayBuffer()),
+    fetch(jostFontUrl).then((r) => r.arrayBuffer()),
+  ]);
   await loadFont(fontData);
+  await loadFontNamed("jost", jostData);
 
   // Load symbols
   loadSymbols(symbolManifest, (id) => {
@@ -151,6 +155,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         ...DEFAULT_RENDER_OPTIONS,
         ...req.options,
       };
+
+      setActiveFont(options.font.font ?? "open-sans");
 
       // Build the base (pass style so pred base can create recess for embossed)
       const baseResult = buildBase({ ...req.base, style: req.style });
@@ -206,6 +212,8 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         ...DEFAULT_RENDER_OPTIONS,
         ...req.options,
       };
+
+      setActiveFont(options.font.font ?? "open-sans");
 
       // Build the base only for area dimensions
       const baseResult = buildBase({ ...req.base, style: req.style });

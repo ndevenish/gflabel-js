@@ -6,7 +6,7 @@ import { FragmentPalette } from "./FragmentPalette.js";
 import { DownloadButtons } from "./DownloadButtons.js";
 import { renderLabel, renderSVG, ensureReady } from "../cad/workerClient.js";
 import type { MeshData } from "../cad/workerClient.js";
-import { LabelStyle } from "../cad/options.js";
+import { LabelStyle, FontStyle } from "../cad/options.js";
 import type { BaseConfig, BaseType } from "../cad/bases/base.js";
 import { CULLENECT_VERSIONS } from "../cad/bases/cullenect.js";
 import type { PreviewMode } from "../App.js";
@@ -19,6 +19,7 @@ interface Settings {
   height?: number;
   version?: string;
   style: LabelStyle;
+  font: string;
   spec: string;
   autoRender: boolean;
   previewMode: PreviewMode;
@@ -30,6 +31,7 @@ const DEFAULTS: Settings = {
   height: undefined,
   version: undefined,
   style: LabelStyle.EMBOSSED,
+  font: "open-sans",
   spec: "{head(hex)} {bolt(12)}\nM3 x 12",
   autoRender: true,
   previewMode: "3d",
@@ -86,6 +88,7 @@ export function ControlPanel({
   const [spec, setSpec] = React.useState(saved.spec);
   const [version, setVersion] = React.useState<string | undefined>(saved.version);
   const [style, setStyle] = React.useState<LabelStyle>(saved.style);
+  const [font, setFont] = React.useState<string>(saved.font);
   const [workerReady, setWorkerReady] = React.useState(false);
   const [autoRender, setAutoRender] = React.useState(saved.autoRender);
 
@@ -109,8 +112,8 @@ export function ControlPanel({
 
   // Persist settings on change
   React.useEffect(() => {
-    saveSettings({ baseType, width, height, version, style, spec, autoRender, previewMode });
-  }, [baseType, width, height, version, style, spec, autoRender, previewMode]);
+    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode });
+  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode]);
 
   const resetSettings = () => {
     const resetBase = lockedBaseType ?? DEFAULTS.baseType;
@@ -119,6 +122,7 @@ export function ControlPanel({
     setHeight(DEFAULTS.height);
     setVersion(DEFAULTS.version);
     setStyle(DEFAULTS.style);
+    setFont(DEFAULTS.font);
     setSpec(DEFAULTS.spec);
     setAutoRender(DEFAULTS.autoRender);
     onPreviewModeChange(DEFAULTS.previewMode);
@@ -143,11 +147,13 @@ export function ControlPanel({
         height,
         version,
       };
+      const fontOptions = { font: { font, fontStyle: FontStyle.REGULAR, fontHeightExact: true } };
       if (previewMode === "svg") {
         const result = await renderSVG({
           spec,
           base: baseConfig,
           style,
+          options: fontOptions,
         });
         onSvgUpdate(result.svg);
       } else {
@@ -155,6 +161,7 @@ export function ControlPanel({
           spec,
           base: baseConfig,
           style,
+          options: fontOptions,
         });
         onMeshUpdate(mesh);
       }
@@ -171,6 +178,7 @@ export function ControlPanel({
     height,
     version,
     style,
+    font,
     previewMode,
     onMeshUpdate,
     onSvgUpdate,
@@ -183,8 +191,8 @@ export function ControlPanel({
   const ensureRendered3D = React.useCallback(async () => {
     if (!workerReady || !spec.trim()) return;
     const baseConfig: BaseConfig = { baseType, width, height, version };
-    await renderLabel({ spec, base: baseConfig, style });
-  }, [workerReady, spec, baseType, width, height, version, style]);
+    await renderLabel({ spec, base: baseConfig, style, options: { font: { font, fontStyle: FontStyle.REGULAR, fontHeightExact: true } } });
+  }, [workerReady, spec, baseType, width, height, version, style, font]);
 
   // Keep a stable ref to doRender so the debounce effect doesn't re-trigger
   // when callback identity changes.
@@ -206,7 +214,7 @@ export function ControlPanel({
     }, delay);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec, baseType, width, height, version, style, previewMode, workerReady, autoRender]);
+  }, [spec, baseType, width, height, version, style, font, previewMode, workerReady, autoRender]);
 
   const handleRender = doRender;
 
@@ -298,6 +306,20 @@ export function ControlPanel({
             <option value={LabelStyle.EMBOSSED}>Embossed</option>
             <option value={LabelStyle.DEBOSSED}>Debossed</option>
             <option value={LabelStyle.EMBEDDED}>Embedded</option>
+          </select>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+            Font
+          </label>
+          <select
+            value={font}
+            onChange={(e) => setFont(e.target.value)}
+            style={{ flex: 1, padding: "6px 8px" }}
+          >
+            <option value="open-sans">Open Sans</option>
+            <option value="jost">Jost</option>
           </select>
         </div>
 

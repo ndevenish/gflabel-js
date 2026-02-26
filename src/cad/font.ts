@@ -13,15 +13,26 @@ import {
   drawRectangle,
 } from "replicad";
 
-let _font: opentype.Font | null = null;
+const _fonts = new Map<string, opentype.Font>();
+let _activeFont = "open-sans";
 
 export async function loadFont(fontData: ArrayBuffer): Promise<void> {
-  _font = opentype.parse(fontData);
+  _fonts.set("open-sans", opentype.parse(fontData));
+}
+
+export async function loadFontNamed(name: string, fontData: ArrayBuffer): Promise<void> {
+  _fonts.set(name, opentype.parse(fontData));
+}
+
+export function setActiveFont(name: string): void {
+  if (!_fonts.has(name)) throw new Error(`Font not loaded: ${name}`);
+  _activeFont = name;
 }
 
 export function getFont(): opentype.Font {
-  if (!_font) throw new Error("Font not loaded — call loadFont() first");
-  return _font;
+  const font = _fonts.get(_activeFont);
+  if (!font) throw new Error("Font not loaded — call loadFont() first");
+  return font;
 }
 
 /**
