@@ -139,6 +139,7 @@ async function generateDerivedSvgs() {
   for (const { name, label, args, spec } of hexheadVariants) {
     renderAndWrite(name, label, spec, "Screw Heads", "hexhead", args);
   }
+
 }
 
 // ── Manifest generation ───────────────────────────────────────

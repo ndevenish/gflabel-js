@@ -25,6 +25,7 @@ interface SvgFragmentDef {
 
 const SVG_FRAGMENTS: SvgFragmentDef[] = [
   { names: ["hexnut", "nut"], file: "nut" },
+  { names: ["squarenut", "square_nut"], file: "squarenut" },
   { names: ["washer"], file: "washer" },
   { names: ["lockwasher"], file: "lockwasher" },
   { names: ["circle"], file: "circle" },

@@ -240,7 +240,7 @@ registerFragment(["box"], (inWidth: string, inHeight?: string) => {
 
 // ── Bolt Fragment ──────────────────────────────────────────────
 
-const HEAD_SHAPES = new Set(["countersunk", "pan", "round", "socket"]);
+const HEAD_SHAPES = new Set(["countersunk", "pan", "round", "socket", "wafer"]);
 const MODIFIERS = new Set(["tapping", "flip", "partial"]);
 const FEATURE_ALIAS: Record<string, string> = {
   countersink: "countersunk",
@@ -383,6 +383,16 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
         pen = pen.lineTo([headX, -lw / 2]);
         for (const pt of bodyRightPts) pen = pen.lineTo(pt);
         pen = pen.lineTo([headX, lw / 2]);
+      } else if (headshape === "wafer") {
+        // Wafer: thin rectangular head — socket-style but only 1/3 linewidth wide
+        const waferX = headX - lw / 3;
+        pen = draw([waferX, headH]);
+        pen = pen.lineTo([waferX, -headH]);
+        pen = pen.lineTo([headX, -headH]);
+        pen = pen.lineTo([headX, -lw / 2]);
+        for (const pt of bodyRightPts) pen = pen.lineTo(pt);
+        pen = pen.lineTo([headX, lw / 2]);
+        pen = pen.lineTo([headX, headH]);
       } else {
         // socket (default): straight rectangular head
         pen = draw([-hw, headH]);

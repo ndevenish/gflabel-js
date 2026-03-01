@@ -20,6 +20,7 @@ const HEAD_SHAPES = [
   { id: "socket", label: "Socket" },
   { id: "round", label: "Round" },
   { id: "countersunk", label: "CSK" },
+  { id: "wafer", label: "Wafer" },
 ] as const;
 
 // "slot" is omitted: parseBoltFeatures consumes it as the "slotted" modifier.

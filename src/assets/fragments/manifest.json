@@ -126,6 +126,12 @@
     "category": "Hardware"
   },
   {
+    "name": "squarenut",
+    "label": "Square Nut",
+    "spec": "{squarenut}",
+    "category": "Hardware"
+  },
+  {
     "name": "threaded_insert",
     "label": "Threaded Insert",
     "spec": "{threaded_insert}",
