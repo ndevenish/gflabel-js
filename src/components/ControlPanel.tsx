@@ -425,14 +425,23 @@ export function ControlPanel({
 
             {hasAdjustableDepth(baseType) && (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>Depth</label>
+                <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>Label Depth</label>
                 <input
                   type="number"
                   value={depth}
                   min={0.1}
                   max={5}
                   step={0.1}
-                  onChange={(e) => setDepth(parseFloat(e.target.value) || DEFAULT_DEPTHS[baseType] || 0.4)}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val)) setDepth(val);
+                  }}
+                  onBlur={(e) => {
+                    const val = parseFloat(e.target.value);
+                    if (isNaN(val) || val < 0.1) {
+                      setDepth(DEFAULT_DEPTHS[baseType] || 0.4);
+                    }
+                  }}
                   style={{ flex: 1, padding: "4px 6px", width: 60 }}
                 />
                 <span style={{ fontSize: 12, color: "#6b7280" }}>mm</span>
@@ -450,8 +459,17 @@ export function ControlPanel({
                 max={getMaxLabelDepth(baseType)}
                 step={0.1}
                 onChange={(e) => {
-                  const val = parseFloat(e.target.value) || 0.4;
-                  setLabelDepth(Math.min(val, getMaxLabelDepth(baseType)));
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val)) setLabelDepth(Math.min(val, getMaxLabelDepth(baseType)));
+                }}
+                onBlur={(e) => {
+                  const val = parseFloat(e.target.value);
+                  const max = getMaxLabelDepth(baseType);
+                  if (isNaN(val) || val < 0.1) {
+                    setLabelDepth(0.4);
+                  } else if (val > max) {
+                    setLabelDepth(max);
+                  }
                 }}
                 style={{ flex: 1, padding: "4px 6px", width: 60 }}
               />
@@ -474,7 +492,18 @@ export function ControlPanel({
                     min={10}
                     max={1000}
                     step={5}
-                    onChange={(e) => setter((parseFloat(e.target.value) || 100) / 100)}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) setter(val / 100);
+                    }}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (isNaN(val) || val < 10) {
+                        setter(1);
+                      } else if (val > 1000) {
+                        setter(10);
+                      }
+                    }}
                     style={{ width: 60, padding: "4px 4px", fontSize: 12 }}
                   />
                   <span style={{ fontSize: 12 }}>%</span>

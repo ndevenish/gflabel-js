@@ -67,7 +67,17 @@ export function BaseSizeControls({
           value={width}
           min={defaultWidth(baseType)}
           step={widthStep(baseType)}
-          onChange={(e) => onWidthChange(Number(e.target.value))}
+          onChange={(e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) onWidthChange(val);
+          }}
+          onBlur={(e) => {
+            const val = parseFloat(e.target.value);
+            const minVal = defaultWidth(baseType);
+            if (isNaN(val) || val < minVal) {
+              onWidthChange(minVal);
+            }
+          }}
           style={inputStyle}
         />
       </div>
@@ -81,9 +91,20 @@ export function BaseSizeControls({
           placeholder={defaultHeightPlaceholder(baseType)}
           min={5}
           step={0.5}
-          onChange={(e) =>
-            onHeightChange(e.target.value ? Number(e.target.value) : undefined)
-          }
+          onChange={(e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val)) {
+              onHeightChange(val);
+            } else if (e.target.value === "") {
+              onHeightChange(undefined);
+            }
+          }}
+          onBlur={(e) => {
+            const val = parseFloat(e.target.value);
+            if (!isNaN(val) && val < 5) {
+              onHeightChange(5);
+            }
+          }}
           style={inputStyle}
         />
       </div>
