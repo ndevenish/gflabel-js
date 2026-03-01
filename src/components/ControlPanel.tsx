@@ -8,6 +8,7 @@ import { renderLabel, renderSVG, ensureReady } from "../cad/workerClient.js";
 import type { MeshData } from "../cad/workerClient.js";
 import { LabelStyle, FontStyle } from "../cad/options.js";
 import type { BaseConfig, BaseType } from "../cad/bases/base.js";
+import { DEFAULT_DEPTHS, hasAdjustableDepth, getMaxLabelDepth } from "../cad/bases/index.js";
 import { CULLENECT_VERSIONS } from "../cad/bases/cullenect.js";
 import type { PreviewMode } from "../App.js";
 
@@ -24,6 +25,7 @@ interface Settings {
   autoRender: boolean;
   previewMode: PreviewMode;
   depth: number;
+  labelDepth: number;
   scaleX: number;
   scaleY: number;
   scaleZ: number;
@@ -39,7 +41,8 @@ const DEFAULTS: Settings = {
   spec: "{head(hex)} {bolt(12)}\nM3 x 12",
   autoRender: true,
   previewMode: "3d",
-  depth: 0.4,
+  depth: DEFAULT_DEPTHS.pred ?? 0.4,
+  labelDepth: 0.4,
   scaleX: 1,
   scaleY: 1,
   scaleZ: 1,
@@ -100,6 +103,7 @@ export function ControlPanel({
   const [workerReady, setWorkerReady] = React.useState(false);
   const [autoRender, setAutoRender] = React.useState(saved.autoRender);
   const [depth, setDepth] = React.useState(saved.depth);
+  const [labelDepth, setLabelDepth] = React.useState(saved.labelDepth);
   const [scaleX, setScaleX] = React.useState(saved.scaleX);
   const [scaleY, setScaleY] = React.useState(saved.scaleY);
   const [scaleZ, setScaleZ] = React.useState(saved.scaleZ);
@@ -111,6 +115,7 @@ export function ControlPanel({
       setWidth(defaultWidth(lockedBaseType));
       setHeight(undefined);
       setVersion(undefined);
+      setDepth(DEFAULT_DEPTHS[lockedBaseType] ?? 0.4);
     }
   }, [lockedBaseType]);
 
@@ -124,8 +129,8 @@ export function ControlPanel({
 
   // Persist settings on change
   React.useEffect(() => {
-    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ });
-  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ]);
+    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, labelDepth, scaleX, scaleY, scaleZ });
+  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, labelDepth, scaleX, scaleY, scaleZ]);
 
   const resetSettings = () => {
     const resetBase = lockedBaseType ?? DEFAULTS.baseType;
@@ -137,7 +142,8 @@ export function ControlPanel({
     setFont(DEFAULTS.font);
     setSpec(DEFAULTS.spec);
     setAutoRender(DEFAULTS.autoRender);
-    setDepth(DEFAULTS.depth);
+    setDepth(DEFAULT_DEPTHS[resetBase] ?? 0.4);
+    setLabelDepth(DEFAULTS.labelDepth);
     setScaleX(DEFAULTS.scaleX);
     setScaleY(DEFAULTS.scaleY);
     setScaleZ(DEFAULTS.scaleZ);
@@ -162,6 +168,7 @@ export function ControlPanel({
         width,
         height,
         depth,
+        labelDepth,
         version,
       };
       const fontOptions = { font: { font, fontStyle: FontStyle.REGULAR, fontHeightExact: true } };
@@ -199,6 +206,7 @@ export function ControlPanel({
     style,
     font,
     depth,
+    labelDepth,
     scaleX,
     scaleY,
     scaleZ,
@@ -213,9 +221,9 @@ export function ControlPanel({
   // Ensure the worker has a 3D solid (needed before export).
   const ensureRendered3D = React.useCallback(async () => {
     if (!workerReady || !spec.trim()) return;
-    const baseConfig: BaseConfig = { baseType, width, height, depth, version };
+    const baseConfig: BaseConfig = { baseType, width, height, depth, labelDepth, version };
     await renderLabel({ spec, base: baseConfig, style, options: { font: { font, fontStyle: FontStyle.REGULAR, fontHeightExact: true } }, scale: [scaleX, scaleY, scaleZ] });
-  }, [workerReady, spec, baseType, width, height, depth, version, style, font, scaleX, scaleY, scaleZ]);
+  }, [workerReady, spec, baseType, width, height, depth, labelDepth, version, style, font, scaleX, scaleY, scaleZ]);
 
   // Keep a stable ref to doRender so the debounce effect doesn't re-trigger
   // when callback identity changes.
@@ -237,7 +245,7 @@ export function ControlPanel({
     }, delay);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec, baseType, width, height, version, style, font, depth, scaleX, scaleY, scaleZ, previewMode, workerReady, autoRender]);
+  }, [spec, baseType, width, height, version, style, font, depth, labelDepth, scaleX, scaleY, scaleZ, previewMode, workerReady, autoRender]);
 
   const handleRender = doRender;
 
@@ -295,6 +303,12 @@ export function ControlPanel({
               setWidth(defaultWidth(bt));
               setHeight(undefined);
               setVersion(undefined);
+              setDepth(DEFAULT_DEPTHS[bt] ?? 0.4);
+              // Clamp label depth to new base's max
+              const maxLabelDepth = getMaxLabelDepth(bt);
+              if (labelDepth > maxLabelDepth) {
+                setLabelDepth(Math.min(labelDepth, maxLabelDepth));
+              }
             }} />
 
             {baseType === "cullenect" && (
@@ -409,17 +423,39 @@ export function ControlPanel({
           <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
             <div style={{ fontWeight: 600 }}>Advanced</div>
 
+            {hasAdjustableDepth(baseType) && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>Depth</label>
+                <input
+                  type="number"
+                  value={depth}
+                  min={0.1}
+                  max={5}
+                  step={0.1}
+                  onChange={(e) => setDepth(parseFloat(e.target.value) || DEFAULT_DEPTHS[baseType] || 0.4)}
+                  style={{ flex: 1, padding: "4px 6px", width: 60 }}
+                />
+                <span style={{ fontSize: 12, color: "#6b7280" }}>mm</span>
+              </div>
+            )}
+
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>Depth (mm)</label>
+              <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>
+                {style === LabelStyle.EMBOSSED ? "Extrude Height" : "Cut Depth"}
+              </label>
               <input
                 type="number"
-                value={depth}
+                value={labelDepth}
                 min={0.1}
-                max={5}
+                max={getMaxLabelDepth(baseType)}
                 step={0.1}
-                onChange={(e) => setDepth(parseFloat(e.target.value) || 0.4)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || 0.4;
+                  setLabelDepth(Math.min(val, getMaxLabelDepth(baseType)));
+                }}
                 style={{ flex: 1, padding: "4px 6px", width: 60 }}
               />
+              <span style={{ fontSize: 12, color: "#6b7280" }}>mm</span>
             </div>
 
             <div style={{ fontWeight: 600, marginTop: 4 }}>Scale</div>

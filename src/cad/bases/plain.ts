@@ -12,7 +12,7 @@ import type { Vec2 } from "../label.js";
 export function buildPlainBase(config: BaseConfig): LabelBaseResult {
   const widthMm = config.width;
   const heightMm = config.height ?? 15;
-  const thickness = 0.8;
+  const thickness = config.depth ?? 0.8;
 
   const profile = drawRectangle(widthMm, heightMm);
   let solid = profile.sketchOnPlane("XY").extrude(-thickness) as Solid;

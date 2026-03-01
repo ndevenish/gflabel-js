@@ -71,7 +71,7 @@ async function main() {
 
   // Import CAD modules
   const { LabelRenderer, renderDividedLabel } = await import("./cad/label.js");
-  const { buildBase, extrudeLabel } = await import("./cad/bases/index.js");
+  const { buildBase, extrudeLabel, getMaxLabelDepth } = await import("./cad/bases/index.js");
   const { DEFAULT_RENDER_OPTIONS } = await import("./cad/options.js");
 
   const program = new Command();
@@ -84,7 +84,9 @@ async function main() {
     .option("-w, --width <n>", "Width (units for pred, mm for plain)", "1")
     .option("--height <mm>", "Height in mm")
     .option("--style <style>", "Label style (embossed, debossed, embedded)", "embossed")
-    .option("--depth <mm>", "Extrusion depth in mm", "0.4")
+    .option("--base-depth <mm>", "Base depth in mm", "0.4")
+    .option("--label-depth <mm>", "Label extrusion/cut depth in mm", "0.4")
+    .option("--depth <mm>", "Deprecated: use --label-depth instead")
     .option("-d, --divisions <n>", "Divisions per label", "1")
     .option("--margin <mm>", "Margin in mm", "0.4")
     .option("--column-gap <mm>", "Column gap in mm", "0.4")
@@ -105,14 +107,27 @@ async function main() {
   setActiveFont(opts.font);
   const width = parseFloat(opts.width);
   const height = opts.height ? parseFloat(opts.height) : undefined;
-  const depth = parseFloat(opts.depth);
+  const baseDepth = parseFloat(opts.baseDepth);
+  const baseTypeEnum = baseType as import("./cad/bases/base.js").BaseType;
+
+  // For backwards compatibility, --depth sets labelDepth if --label-depth not specified
+  let labelDepth = opts.labelDepth ? parseFloat(opts.labelDepth) : (opts.depth ? parseFloat(opts.depth) : 0.4);
+
+  // Clamp label depth to base-specific maximum
+  const maxLabelDepth = getMaxLabelDepth(baseTypeEnum);
+  if (labelDepth > maxLabelDepth) {
+    console.warn(`Warning: Label depth ${labelDepth}mm exceeds maximum ${maxLabelDepth}mm for ${baseType} base. Clamping to ${maxLabelDepth}mm.`);
+    labelDepth = maxLabelDepth;
+  }
+
   const divisions = parseInt(opts.divisions, 10);
 
   const baseConfig = {
-    baseType: baseType as import("./cad/bases/base.js").BaseType,
+    baseType: baseTypeEnum,
     width,
     height,
-    depth,
+    depth: baseDepth,
+    labelDepth,
     style,
   };
 
@@ -147,7 +162,7 @@ async function main() {
   }
 
   // Extrude and combine
-  const { solid } = extrudeLabel(baseResult, labelDrawing, style, depth);
+  const { solid } = extrudeLabel(baseResult, labelDrawing, style, labelDepth);
 
   // Export
   const outputPath = resolve(opts.output);

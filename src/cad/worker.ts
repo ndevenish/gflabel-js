@@ -192,7 +192,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         baseResult,
         labelDrawing,
         req.style,
-        req.base.depth ?? 0.4,
+        req.base.labelDepth ?? 0.4,
       );
       lastSolid = extrudeResult.solid;
 

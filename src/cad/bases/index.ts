@@ -85,4 +85,4 @@ export function extrudeLabel(
 }
 
 export type { BaseConfig, BaseType, LabelBaseResult } from "./base.js";
-export { DEFAULT_MARGINS } from "./base.js";
+export { DEFAULT_MARGINS, DEFAULT_DEPTHS, hasAdjustableDepth, getMaxLabelDepth } from "./base.js";
