@@ -41,17 +41,8 @@ function makeQrFragment(
   const centeredDrawing = baseDrawing.translate([-center[0], -center[1]]);
 
   return new (class extends Fragment {
-    private _cache = new Map<number, FragmentRenderResult>();
-
     render(height: number, _maxWidth: number, _opts: RenderOptions): FragmentRenderResult {
-      const cached = this._cache.get(height);
-      if (cached) return cached;
-      const result: FragmentRenderResult = {
-        drawing: centeredDrawing.scale(height / bbHeight),
-        width: height,
-      };
-      this._cache.set(height, result);
-      return result;
+      return { drawing: centeredDrawing.scale(height / bbHeight), width: height };
     }
   })();
 }
