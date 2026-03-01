@@ -36,14 +36,22 @@ function makeQrFragment(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const svgStr = bwipjs.toSVG({ bcid, text: data, scale: 1, paddingwidth: 0, paddingheight: 0, eclevel: level } as any);
   const baseDrawing = svgToDrawing(svgStr);
-  const bbHeight = baseDrawing.boundingBox.height;
+  const { center, height: bbHeight } = baseDrawing.boundingBox;
+  // Pre-center once; render() only needs to scale.
+  const centeredDrawing = baseDrawing.translate([-center[0], -center[1]]);
 
   return new (class extends Fragment {
+    private _cache = new Map<number, FragmentRenderResult>();
+
     render(height: number, _maxWidth: number, _opts: RenderOptions): FragmentRenderResult {
-      const bb = baseDrawing.boundingBox;
-      let drawing = baseDrawing.translate([-bb.center[0], -bb.center[1]]);
-      drawing = drawing.scale(height / bbHeight);
-      return { drawing, width: height };
+      const cached = this._cache.get(height);
+      if (cached) return cached;
+      const result: FragmentRenderResult = {
+        drawing: centeredDrawing.scale(height / bbHeight),
+        width: height,
+      };
+      this._cache.set(height, result);
+      return result;
     }
   })();
 }
