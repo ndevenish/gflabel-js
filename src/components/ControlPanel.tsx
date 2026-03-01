@@ -439,7 +439,7 @@ export function ControlPanel({
                     max={1000}
                     step={5}
                     onChange={(e) => setter((parseFloat(e.target.value) || 100) / 100)}
-                    style={{ width: 50, padding: "4px 4px", fontSize: 12 }}
+                    style={{ width: 60, padding: "4px 4px", fontSize: 12 }}
                   />
                   <span style={{ fontSize: 12 }}>%</span>
                 </div>
