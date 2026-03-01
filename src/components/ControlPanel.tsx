@@ -218,6 +218,20 @@ export function ControlPanel({
 
   const handleRender = doRender;
 
+  const [advancedOpen, setAdvancedOpen] = React.useState(false);
+  const baseZoneRef = React.useRef<HTMLDivElement>(null);
+  const [baseZoneHeight, setBaseZoneHeight] = React.useState(0);
+
+  // Measure the base config zone height for the advanced panel
+  React.useEffect(() => {
+    if (!baseZoneRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setBaseZoneHeight(entry.contentRect.height);
+    });
+    ro.observe(baseZoneRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <div
       style={{
@@ -227,6 +241,7 @@ export function ControlPanel({
         display: "flex",
         flexDirection: "column",
         height: "100%",
+        position: "relative",
       }}
     >
       {/* Top zone: controls (shrink-to-fit) */}
@@ -260,51 +275,78 @@ export function ControlPanel({
           </button>
         </div>
 
-        <BaseSelector value={baseType} disabled={!!lockedBaseType} onChange={(bt) => {
-          setBaseType(bt);
-          setWidth(defaultWidth(bt));
-          setHeight(undefined);
-          setVersion(undefined);
-        }} />
+        {/* Base config zone — measured for advanced panel height */}
+        <div ref={baseZoneRef} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <BaseSelector value={baseType} disabled={!!lockedBaseType} onChange={(bt) => {
+            setBaseType(bt);
+            setWidth(defaultWidth(bt));
+            setHeight(undefined);
+            setVersion(undefined);
+          }} />
 
-        {baseType === "cullenect" && (
+          {baseType === "cullenect" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+                Version
+              </label>
+              <select
+                value={version ?? "v2.0.0"}
+                onChange={(e) => setVersion(e.target.value)}
+                style={{ flex: 1, padding: "6px 8px" }}
+              >
+                {CULLENECT_VERSIONS.map((v) => (
+                  <option key={v.id} value={v.id}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <BaseSizeControls
+            baseType={baseType}
+            width={width}
+            height={height}
+            onWidthChange={setWidth}
+            onHeightChange={setHeight}
+          />
+
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
-              Version
+              Style
             </label>
             <select
-              value={version ?? "v2.0.0"}
-              onChange={(e) => setVersion(e.target.value)}
+              value={style}
+              onChange={(e) => setStyle(e.target.value as LabelStyle)}
               style={{ flex: 1, padding: "6px 8px" }}
             >
-              {CULLENECT_VERSIONS.map((v) => (
-                <option key={v.id} value={v.id}>{v.label}</option>
-              ))}
+              <option value={LabelStyle.EMBOSSED}>Embossed</option>
+              <option value={LabelStyle.DEBOSSED}>Debossed</option>
+              <option value={LabelStyle.EMBEDDED}>Embedded</option>
             </select>
           </div>
-        )}
+        </div>
 
-        <BaseSizeControls
-          baseType={baseType}
-          width={width}
-          height={height}
-          onWidthChange={setWidth}
-          onHeightChange={setHeight}
-        />
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <label style={{ fontSize: 13, whiteSpace: "nowrap" }}>
-            Style
-          </label>
-          <select
-            value={style}
-            onChange={(e) => setStyle(e.target.value as LabelStyle)}
-            style={{ flex: 1, padding: "6px 8px" }}
+        {/* Soft divider with Advanced tab */}
+        <div style={{ position: "relative", borderTop: "1px solid #e5e7eb", marginRight: -16 }}>
+          <button
+            onClick={() => setAdvancedOpen(!advancedOpen)}
+            style={{
+              position: "absolute",
+              right: 0,
+              top: 0,
+              transform: "translateY(-100%)",
+              padding: "2px 10px",
+              fontSize: 11,
+              color: advancedOpen ? "#fff" : "#6b7280",
+              background: advancedOpen ? "#2563eb" : "#f3f4f6",
+              border: "1px solid #d1d5db",
+              borderBottom: "none",
+              borderRadius: "4px 4px 0 0",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
           >
-            <option value={LabelStyle.EMBOSSED}>Embossed</option>
-            <option value={LabelStyle.DEBOSSED}>Debossed</option>
-            <option value={LabelStyle.EMBEDDED}>Embedded</option>
-          </select>
+            Advanced {advancedOpen ? "\u25C0" : "\u25B6"}
+          </button>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -324,6 +366,31 @@ export function ControlPanel({
 
         <LabelSpecInput value={spec} onChange={setSpec} insertAtCursorRef={insertAtCursorRef} />
       </div>
+
+      {/* Advanced panel — slides out to the right */}
+      {advancedOpen && (
+        <div
+          style={{
+            position: "absolute",
+            left: "100%",
+            top: 0,
+            height: baseZoneHeight ? baseZoneHeight + 48 : "auto",
+            width: 300,
+            background: "#fff",
+            borderRight: "1px solid #ddd",
+            borderBottom: "1px solid #ddd",
+            boxShadow: "2px 2px 8px rgba(0,0,0,0.08)",
+            zIndex: 50,
+            padding: 16,
+            overflowY: "auto",
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Advanced Settings</div>
+          <div style={{ fontSize: 12, color: "#9ca3af" }}>
+            Base tweaking options will go here.
+          </div>
+        </div>
+      )}
 
       {/* Middle zone: fragment palette (scrollable) */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px", minHeight: 0 }}>
