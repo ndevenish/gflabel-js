@@ -101,25 +101,32 @@ export function BaseSelector({ value, onChange, disabled }: Props) {
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>
-      {/* Selected value button — image fills the full area */}
+      {/* Selected value button — image at 70% with dropdown arrow */}
       <button
         onClick={() => !disabled && setOpen(!open)}
         style={{
           width: "100%",
-          display: "block",
-          padding: 0,
-          border: "1px solid #d1d5db",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          padding: "4px",
+          border: disabled ? "none" : "1px solid #d1d5db",
           borderRadius: 6,
-          background: "#fff",
+          background: disabled ? "transparent" : "#fff",
           cursor: disabled ? "default" : "pointer",
-          overflow: "hidden",
         }}
       >
         <img
           src={current.image}
           alt={current.label}
-          style={{ width: "100%", height: "auto", display: "block" }}
+          style={{ width: "70%", height: "auto", display: "block", borderRadius: 4 }}
         />
+        {!disabled && (
+          <span style={{ position: "absolute", right: 8, fontSize: 12, color: "#9ca3af" }}>
+            {open ? "\u25B2" : "\u25BC"}
+          </span>
+        )}
       </button>
 
       {/* Dropdown popup — wider to fit image + description */}
