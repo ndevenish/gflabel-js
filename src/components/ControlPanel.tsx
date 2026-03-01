@@ -260,14 +260,12 @@ export function ControlPanel({
           </button>
         </div>
 
-        {!lockedBaseType && (
-          <BaseSelector value={baseType} onChange={(bt) => {
-            setBaseType(bt);
-            setWidth(defaultWidth(bt));
-            setHeight(undefined);
-            setVersion(undefined);
-          }} />
-        )}
+        <BaseSelector value={baseType} disabled={!!lockedBaseType} onChange={(bt) => {
+          setBaseType(bt);
+          setWidth(defaultWidth(bt));
+          setHeight(undefined);
+          setVersion(undefined);
+        }} />
 
         {baseType === "cullenect" && (
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
