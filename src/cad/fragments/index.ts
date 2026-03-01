@@ -15,6 +15,7 @@ import "./spacer.js";
 import "./hardware.js";
 import "./layout.js";
 import "./symbols.js";
+import "./qr.js";
 
 // ── Spec parsing regex ──────────────────────────────────────────
 
