@@ -47,6 +47,7 @@ interface RenderRequest {
   style: LabelStyle;
   options?: Partial<RenderOptions>;
   divisions?: number;
+  scale?: [number, number, number];
 }
 
 interface RenderSvgRequest {
@@ -200,6 +201,25 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       const faces = new Float32Array(mesh.vertices);
       const normals = new Float32Array(mesh.normals);
       const indices = new Uint32Array(mesh.triangles);
+
+      // Apply non-uniform scale to mesh vertices and normals
+      const [sx, sy, sz] = req.scale ?? [1, 1, 1];
+      if (sx !== 1 || sy !== 1 || sz !== 1) {
+        for (let i = 0; i < faces.length; i += 3) {
+          faces[i] = faces[i]! * sx;
+          faces[i + 1] = faces[i + 1]! * sy;
+          faces[i + 2] = faces[i + 2]! * sz;
+        }
+        // Scale normals by inverse scale, then renormalize
+        const isx = 1 / sx, isy = 1 / sy, isz = 1 / sz;
+        for (let i = 0; i < normals.length; i += 3) {
+          const nx = normals[i]! * isx, ny = normals[i + 1]! * isy, nz = normals[i + 2]! * isz;
+          const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+          normals[i] = nx / len;
+          normals[i + 1] = ny / len;
+          normals[i + 2] = nz / len;
+        }
+      }
 
       const msg: MeshResponse = {
         id: req.id,

@@ -23,6 +23,10 @@ interface Settings {
   spec: string;
   autoRender: boolean;
   previewMode: PreviewMode;
+  depth: number;
+  scaleX: number;
+  scaleY: number;
+  scaleZ: number;
 }
 
 const DEFAULTS: Settings = {
@@ -35,6 +39,10 @@ const DEFAULTS: Settings = {
   spec: "{head(hex)} {bolt(12)}\nM3 x 12",
   autoRender: true,
   previewMode: "3d",
+  depth: 0.4,
+  scaleX: 1,
+  scaleY: 1,
+  scaleZ: 1,
 };
 
 function loadSettings(): Settings {
@@ -91,6 +99,10 @@ export function ControlPanel({
   const [font, setFont] = React.useState<string>(saved.font);
   const [workerReady, setWorkerReady] = React.useState(false);
   const [autoRender, setAutoRender] = React.useState(saved.autoRender);
+  const [depth, setDepth] = React.useState(saved.depth);
+  const [scaleX, setScaleX] = React.useState(saved.scaleX);
+  const [scaleY, setScaleY] = React.useState(saved.scaleY);
+  const [scaleZ, setScaleZ] = React.useState(saved.scaleZ);
 
   // Sync baseType when route-locked type changes
   React.useEffect(() => {
@@ -112,8 +124,8 @@ export function ControlPanel({
 
   // Persist settings on change
   React.useEffect(() => {
-    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode });
-  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode]);
+    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ });
+  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ]);
 
   const resetSettings = () => {
     const resetBase = lockedBaseType ?? DEFAULTS.baseType;
@@ -125,6 +137,10 @@ export function ControlPanel({
     setFont(DEFAULTS.font);
     setSpec(DEFAULTS.spec);
     setAutoRender(DEFAULTS.autoRender);
+    setDepth(DEFAULTS.depth);
+    setScaleX(DEFAULTS.scaleX);
+    setScaleY(DEFAULTS.scaleY);
+    setScaleZ(DEFAULTS.scaleZ);
     onPreviewModeChange(DEFAULTS.previewMode);
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -145,9 +161,11 @@ export function ControlPanel({
         baseType,
         width,
         height,
+        depth,
         version,
       };
       const fontOptions = { font: { font, fontStyle: FontStyle.REGULAR, fontHeightExact: true } };
+      const scale: [number, number, number] = [scaleX, scaleY, scaleZ];
       if (previewMode === "svg") {
         const result = await renderSVG({
           spec,
@@ -162,6 +180,7 @@ export function ControlPanel({
           base: baseConfig,
           style,
           options: fontOptions,
+          scale,
         });
         onMeshUpdate(mesh);
       }
@@ -179,6 +198,10 @@ export function ControlPanel({
     version,
     style,
     font,
+    depth,
+    scaleX,
+    scaleY,
+    scaleZ,
     previewMode,
     onMeshUpdate,
     onSvgUpdate,
@@ -190,9 +213,9 @@ export function ControlPanel({
   // Ensure the worker has a 3D solid (needed before export).
   const ensureRendered3D = React.useCallback(async () => {
     if (!workerReady || !spec.trim()) return;
-    const baseConfig: BaseConfig = { baseType, width, height, version };
-    await renderLabel({ spec, base: baseConfig, style, options: { font: { font, fontStyle: FontStyle.REGULAR, fontHeightExact: true } } });
-  }, [workerReady, spec, baseType, width, height, version, style, font]);
+    const baseConfig: BaseConfig = { baseType, width, height, depth, version };
+    await renderLabel({ spec, base: baseConfig, style, options: { font: { font, fontStyle: FontStyle.REGULAR, fontHeightExact: true } }, scale: [scaleX, scaleY, scaleZ] });
+  }, [workerReady, spec, baseType, width, height, depth, version, style, font, scaleX, scaleY, scaleZ]);
 
   // Keep a stable ref to doRender so the debounce effect doesn't re-trigger
   // when callback identity changes.
@@ -214,24 +237,12 @@ export function ControlPanel({
     }, delay);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec, baseType, width, height, version, style, font, previewMode, workerReady, autoRender]);
+  }, [spec, baseType, width, height, version, style, font, depth, scaleX, scaleY, scaleZ, previewMode, workerReady, autoRender]);
 
   const handleRender = doRender;
 
   const [advancedOpen, setAdvancedOpen] = React.useState(false);
   const baseZoneRef = React.useRef<HTMLDivElement>(null);
-  const [baseZoneHeight, setBaseZoneHeight] = React.useState(0);
-
-  // Measure the base config zone height for the advanced panel
-  React.useEffect(() => {
-    if (!baseZoneRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) setBaseZoneHeight(entry.contentRect.height);
-    });
-    ro.observe(baseZoneRef.current);
-    return () => ro.disconnect();
-  }, []);
 
   return (
     <div
@@ -395,9 +406,40 @@ export function ControlPanel({
             overflowY: "auto",
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Advanced Settings</div>
-          <div style={{ fontSize: 12, color: "#9ca3af" }}>
-            Base tweaking options will go here.
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
+            <div style={{ fontWeight: 600 }}>Advanced</div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>Depth (mm)</label>
+              <input
+                type="number"
+                value={depth}
+                min={0.1}
+                max={5}
+                step={0.1}
+                onChange={(e) => setDepth(parseFloat(e.target.value) || 0.4)}
+                style={{ flex: 1, padding: "4px 6px", width: 60 }}
+              />
+            </div>
+
+            <div style={{ fontWeight: 600, marginTop: 4 }}>Scale</div>
+
+            {([["X", scaleX, setScaleX], ["Y", scaleY, setScaleY], ["Z", scaleZ, setScaleZ]] as const).map(
+              ([axis, val, setter]) => (
+                <div key={axis} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>Scale {axis}</label>
+                  <input
+                    type="number"
+                    value={val}
+                    min={0.1}
+                    max={10}
+                    step={0.05}
+                    onChange={(e) => setter(parseFloat(e.target.value) || 1)}
+                    style={{ flex: 1, padding: "4px 6px", width: 60 }}
+                  />
+                </div>
+              ),
+            )}
           </div>
         </div>
       )}

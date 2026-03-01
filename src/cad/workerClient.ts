@@ -101,6 +101,7 @@ export async function renderLabel(params: {
   style: LabelStyle;
   options?: Partial<RenderOptions>;
   divisions?: number;
+  scale?: [number, number, number];
 }): Promise<MeshData> {
   await waitReady();
   const result = (await send({
