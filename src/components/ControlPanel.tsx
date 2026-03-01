@@ -424,22 +424,27 @@ export function ControlPanel({
 
             <div style={{ fontWeight: 600, marginTop: 4 }}>Scale</div>
 
-            {([["X", scaleX, setScaleX], ["Y", scaleY, setScaleY], ["Z", scaleZ, setScaleZ]] as const).map(
-              ([axis, val, setter]) => (
-                <div key={axis} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>Scale {axis}</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {([
+                ["X", scaleX, setScaleX],
+                ["Y", scaleY, setScaleY],
+                ["Z", scaleZ, setScaleZ],
+              ] as const).map(([axis, val, setter]) => (
+                <div key={axis} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <label style={{ fontSize: 12 }}>{axis}</label>
                   <input
                     type="number"
-                    value={val}
-                    min={0.1}
-                    max={10}
-                    step={0.05}
-                    onChange={(e) => setter(parseFloat(e.target.value) || 1)}
-                    style={{ flex: 1, padding: "4px 6px", width: 60 }}
+                    value={Math.round(val * 100)}
+                    min={10}
+                    max={1000}
+                    step={5}
+                    onChange={(e) => setter((parseFloat(e.target.value) || 100) / 100)}
+                    style={{ width: 50, padding: "4px 4px", fontSize: 12 }}
                   />
+                  <span style={{ fontSize: 12 }}>%</span>
                 </div>
-              ),
-            )}
+              ))}
+            </div>
           </div>
         </div>
       )}
