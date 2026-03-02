@@ -114,6 +114,13 @@
     "category": "Misc"
   },
   {
+    "name": "microqr",
+    "label": "Micro QR",
+    "spec": "{microqr(text)}",
+    "category": "Misc",
+    "tooltip": "Micro QR: {microqr(data)} or {microqr(data,level)} — EC levels: L (7%, default), M (15%), Q (25%)"
+  },
+  {
     "name": "nut",
     "label": "Nut",
     "spec": "{nut}",
@@ -124,6 +131,13 @@
     "label": "Nut Profile",
     "spec": "{nut_profile}",
     "category": "Misc"
+  },
+  {
+    "name": "qr",
+    "label": "QR Code",
+    "spec": "{qr(text)}",
+    "category": "Misc",
+    "tooltip": "QR Code: {qr(data)} or {qr(data,level)} — EC levels: L (7%), M (15%, default), Q (25%), H (30%)"
   },
   {
     "name": "squarenut",

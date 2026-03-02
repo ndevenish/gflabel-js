@@ -7,6 +7,7 @@ interface ManifestEntry {
   label: string;
   spec: string;
   category: string;
+  tooltip?: string;
 }
 
 const KEEP_CATEGORIES = new Set(["Misc", "Screw Heads"]);
@@ -33,7 +34,10 @@ function parseSvgMeta(raw: string): ManifestEntry | null {
   const label = get("label");
   const spec = get("spec");
   const category = get("category");
-  if (name && label && spec && category) return { name, label, spec, category };
+  if (name && label && spec && category) {
+    const tooltip = get("tooltip") ?? undefined;
+    return { name, label, spec, category, tooltip };
+  }
   return null;
 }
 
@@ -216,7 +220,7 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
                   return (
                     <button
                       key={frag.name}
-                      title={frag.label}
+                      title={frag.tooltip ?? frag.label}
                       onClick={() => insertAtCursorRef.current?.(frag.spec)}
                       style={{
                         display: "flex",
