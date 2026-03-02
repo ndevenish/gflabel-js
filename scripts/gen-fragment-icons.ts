@@ -145,53 +145,6 @@ async function generateDerivedSvgs() {
     renderAndWrite(name, label, spec, "Screw Heads", "hexhead", args);
   }
 
-  // ── QR code fragments ──────────────────────────────────────
-  // Use bwip-js SVG output directly as the icon (bypassing the CAD pipeline)
-  // because the many-polygon union overflows the call stack for standard QR.
-  console.log("QR fragments:");
-  {
-    const bwipjs = (await import("bwip-js/generic")).default;
-    const qrFragments: Array<{
-      name: string; label: string; spec: string; bcid: string; sampleData: string; tooltip: string;
-    }> = [
-      {
-        name: "qr",
-        label: "QR Code",
-        spec: "{qr(text)}",
-        bcid: "qrcode",
-        sampleData: "QR",
-        tooltip: "QR Code: {qr(data)} or {qr(data,level)} — EC levels: L (7%), M (15%, default), Q (25%), H (30%)",
-      },
-      {
-        name: "microqr",
-        label: "Micro QR",
-        spec: "{microqr(text)}",
-        bcid: "microqrcode",
-        sampleData: "MR",
-        tooltip: "Micro QR: {microqr(data)} or {microqr(data,level)} — EC levels: L (7%, default), M (15%), Q (25%)",
-      },
-    ];
-    for (const frag of qrFragments) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const rawSvg: string = bwipjs.toSVG({ bcid: frag.bcid as any, text: frag.sampleData, scale: 1, paddingwidth: 0, paddingheight: 0 } as any);
-        // Inject data-* attributes into the <svg> opening tag
-        const dataAttrs = [
-          `data-name="${frag.name}"`,
-          `data-label="${frag.label}"`,
-          `data-spec="${frag.spec}"`,
-          `data-category="Misc"`,
-          `data-tooltip="${frag.tooltip}"`,
-        ].join(" ");
-        const iconSvg = rawSvg.replace(/^<svg /, `<svg ${dataAttrs} `);
-        writeFileSync(resolve(OUT_DIR, `${frag.name}.svg`), iconSvg, "utf-8");
-        console.log(`  ${frag.name}.svg`);
-      } catch (err) {
-        console.error(`  FAILED ${frag.name}: ${err}`);
-      }
-    }
-  }
-
 }
 
 // ── Manifest generation ───────────────────────────────────────

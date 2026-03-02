@@ -620,12 +620,19 @@ export function svgToDrawing(svgString: string): Drawing {
 
   if (accumulated.length === 0) return drawRectangle(0.001, 0.001);
 
-  // Union all polygons in polygon-clipping (robust 2D booleans)
+  // Union all polygons in polygon-clipping (robust 2D booleans).
+  // Process pairwise rather than spreading all at once: spreading hundreds of
+  // polygons as arguments causes a call stack overflow in polygon-clipping's
+  // internal sweep for complex inputs (e.g. QR codes with many modules).
   if (accumulated.length > 1) {
-    accumulated = polygonClipping.union(
-      accumulated[0]! as Parameters<typeof polygonClipping.union>[0],
-      ...accumulated.slice(1),
-    );
+    let result: MultiPolygon = [accumulated[0]!];
+    for (let i = 1; i < accumulated.length; i++) {
+      result = polygonClipping.union(
+        result as Parameters<typeof polygonClipping.union>[0],
+        accumulated[i]!,
+      );
+    }
+    accumulated = result;
   }
 
   return multiPolygonToDrawing(accumulated);
