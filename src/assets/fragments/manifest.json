@@ -3,7 +3,7 @@
     "name": "circle",
     "label": "Circle",
     "spec": "{circle}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "head-cross",
@@ -99,61 +99,61 @@
     "name": "locknut_profile",
     "label": "Lock Nut Profile",
     "spec": "{locknut_profile}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "lockwasher",
     "label": "Lock Washer",
     "spec": "{lockwasher}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "magnet",
     "label": "Magnet",
     "spec": "{magnet}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "nut",
     "label": "Nut",
     "spec": "{nut}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "nut_profile",
     "label": "Nut Profile",
     "spec": "{nut_profile}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "squarenut",
     "label": "Square Nut",
     "spec": "{squarenut}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "threaded_insert",
     "label": "Threaded Insert",
     "spec": "{threaded_insert}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "tnut",
     "label": "T-Nut",
     "spec": "{tnut}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "variable_resistor",
     "label": "Variable Resistor",
     "spec": "{variable_resistor}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "washer",
     "label": "Washer",
     "spec": "{washer}",
-    "category": "Hardware"
+    "category": "Misc"
   },
   {
     "name": "sym-antenna-com-loop",

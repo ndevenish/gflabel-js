@@ -9,7 +9,7 @@ interface ManifestEntry {
   category: string;
 }
 
-const KEEP_CATEGORIES = new Set(["Hardware", "Screw Heads"]);
+const KEEP_CATEGORIES = new Set(["Misc", "Screw Heads"]);
 
 // Eagerly import all fragment SVGs as raw strings — inlined into the JS bundle
 const svgRawModules = import.meta.glob<string>(
@@ -92,7 +92,7 @@ const CATEGORIES: string[] = [];
 }
 
 // These categories are expanded by default
-const DEFAULT_EXPANDED = new Set(["Hardware", "Screw Heads", "Bolts", "Electronic Symbols"]);
+const DEFAULT_EXPANDED = new Set(["Misc", "Screw Heads", "Bolts", "Electronic Symbols"]);
 
 interface Props {
   insertAtCursorRef: React.RefObject<((text: string) => void) | null>;
