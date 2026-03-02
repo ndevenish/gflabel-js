@@ -8,7 +8,14 @@
  * SVG Y-down coordinates are flipped to replicad Y-up.
  */
 
-import { draw, Drawing, drawRectangle } from "replicad";
+import {
+  Drawing,
+  drawRectangle,
+  Blueprint,
+  BlueprintSketcher,
+  Blueprints,
+  CompoundBlueprint,
+} from "replicad";
 import polygonClipping from "polygon-clipping";
 
 // ── Contour types ──────────────────────────────────────────────
@@ -358,33 +365,6 @@ function signedArea(points: [number, number][]): number {
   return area / 2;
 }
 
-function contourToDrawing(points: [number, number][]): Drawing {
-  const EPS = 1e-6;
-  const filtered: [number, number][] = [points[0]!];
-  for (let i = 1; i < points.length; i++) {
-    const [px, py] = filtered[filtered.length - 1]!;
-    const [cx, cy] = points[i]!;
-    if (Math.abs(cx - px) > EPS || Math.abs(cy - py) > EPS) {
-      filtered.push([cx, cy]);
-    }
-  }
-  if (filtered.length > 1) {
-    const [fx, fy] = filtered[0]!;
-    const [lx, ly] = filtered[filtered.length - 1]!;
-    if (Math.abs(lx - fx) < EPS && Math.abs(ly - fy) < EPS) {
-      filtered.pop();
-    }
-  }
-  if (filtered.length < 3) {
-    return drawRectangle(0.001, 0.001);
-  }
-  let pen = draw(filtered[0]!);
-  for (let i = 1; i < filtered.length; i++) {
-    pen = pen.lineTo(filtered[i]!);
-  }
-  return pen.close();
-}
-
 // ── Public API ─────────────────────────────────────────────────
 
 /**
@@ -428,7 +408,7 @@ function closeRing(pts: Ring): Ring {
   return pts;
 }
 
-/** Remove closing duplicate point for contourToDrawing. */
+/** Remove closing duplicate point for pointsToBlueprint. */
 function openRing(pts: Ring): Ring {
   if (pts.length < 2) return pts;
   const [fx, fy] = pts[0]!;
@@ -567,19 +547,64 @@ function contoursToPolygonsEvenOdd(contours: Contour[]): MultiPolygon {
   return outers.map((o) => [o.ring, ...o.holes]);
 }
 
-/** Convert a polygon-clipping MultiPolygon result into a single Drawing. */
-function multiPolygonToDrawing(mp: MultiPolygon): Drawing {
-  let result: Drawing | null = null;
-  for (const polygon of mp) {
-    const outerPts = openRing(polygon[0]!);
-    let drawing = contourToDrawing(outerPts);
-    for (let h = 1; h < polygon.length; h++) {
-      const holePts = openRing(polygon[h]!);
-      drawing = drawing.cut(contourToDrawing(holePts));
+/** Convert an array of points into a Blueprint (closed 2D curve). */
+function pointsToBlueprint(points: [number, number][]): Blueprint | null {
+  const EPS = 1e-6;
+  const filtered: [number, number][] = [points[0]!];
+  for (let i = 1; i < points.length; i++) {
+    const [px, py] = filtered[filtered.length - 1]!;
+    const [cx, cy] = points[i]!;
+    if (Math.abs(cx - px) > EPS || Math.abs(cy - py) > EPS) {
+      filtered.push([cx, cy]);
     }
-    result = result ? result.fuse(drawing) : drawing;
   }
-  return result ?? drawRectangle(0.001, 0.001);
+  if (filtered.length > 1) {
+    const [fx, fy] = filtered[0]!;
+    const [lx, ly] = filtered[filtered.length - 1]!;
+    if (Math.abs(lx - fx) < EPS && Math.abs(ly - fy) < EPS) {
+      filtered.pop();
+    }
+  }
+  if (filtered.length < 3) return null;
+
+  const sk = new BlueprintSketcher(filtered[0]!);
+  for (let i = 1; i < filtered.length; i++) {
+    sk.lineTo(filtered[i]!);
+  }
+  return sk.close();
+}
+
+/**
+ * Convert a polygon-clipping MultiPolygon result into a single Drawing.
+ *
+ * Constructs Blueprint/CompoundBlueprint/Blueprints directly instead of
+ * using replicad's 2D boolean operations (.fuse/.cut), which can overflow
+ * the call stack on complex geometry (e.g. QR codes with many modules).
+ */
+function multiPolygonToDrawing(mp: MultiPolygon): Drawing {
+  const shapes: (Blueprint | CompoundBlueprint)[] = [];
+
+  for (const polygon of mp) {
+    const outerBp = pointsToBlueprint(openRing(polygon[0]!));
+    if (!outerBp) continue;
+
+    if (polygon.length === 1) {
+      // Simple polygon, no holes
+      shapes.push(outerBp);
+    } else {
+      // Polygon with holes → CompoundBlueprint
+      const bps: Blueprint[] = [outerBp];
+      for (let h = 1; h < polygon.length; h++) {
+        const holeBp = pointsToBlueprint(openRing(polygon[h]!));
+        if (holeBp) bps.push(holeBp);
+      }
+      shapes.push(bps.length === 1 ? outerBp : new CompoundBlueprint(bps));
+    }
+  }
+
+  if (shapes.length === 0) return drawRectangle(0.001, 0.001);
+  if (shapes.length === 1) return new Drawing(shapes[0]!);
+  return new Drawing(new Blueprints(shapes));
 }
 
 /**
