@@ -2,7 +2,7 @@
  * Base geometry entry point.
  */
 
-import { compoundShapes, type Solid } from "replicad";
+import { compoundShapes, Sketches, type Solid, type SketchInterface } from "replicad";
 import type { BaseConfig, LabelBaseResult } from "./base.js";
 import { buildPredBase } from "./pred.js";
 import { buildPlainBase } from "./plain.js";
@@ -49,6 +49,32 @@ export interface ExtrudeResult {
   baseTriangleCount?: number;
 }
 
+/**
+ * Extrude a label sketch and combine with the base solid using fuse or cut.
+ * When the sketch has multiple separate outer shapes (Sketches), extrude and
+ * combine each body individually to avoid passing a large compound to
+ * OpenCascade's boolean algorithms, which can recurse deeply enough to
+ * overflow the WASM call stack (e.g. QR codes with many separate modules).
+ */
+function extrudeAndCombine(
+  sketch: SketchInterface | Sketches,
+  depth: number,
+  base: Solid | null,
+  op: "fuse" | "cut",
+): Solid {
+  const sign = op === "cut" ? -1 : 1;
+  if (sketch instanceof Sketches) {
+    let result = base;
+    for (const s of sketch.sketches) {
+      const part = s.extrude(sign * depth) as Solid;
+      result = result ? (result[op](part) as Solid) : part;
+    }
+    return result!;
+  }
+  const labelSolid = sketch.extrude(sign * depth) as Solid;
+  return base ? (base[op](labelSolid) as Solid) : labelSolid;
+}
+
 export function extrudeLabel(
   baseResult: LabelBaseResult,
   labelDrawing: import("replicad").Drawing,
@@ -58,29 +84,28 @@ export function extrudeLabel(
   const { solid } = baseResult;
 
   if (style === LabelStyle.EMBOSSED) {
-    // Raised text fused onto base surface
-    const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(depth) as Solid;
-    return { solid: solid ? solid.fuse(labelSolid) : labelSolid };
+    const sketch = labelDrawing.sketchOnPlane("XY", 0);
+    return { solid: extrudeAndCombine(sketch, depth, solid ?? null, "fuse") };
   } else if (style === LabelStyle.DEBOSSED) {
-    // Text cut into base surface
-    const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
-    return { solid: solid ? solid.cut(labelSolid) : labelSolid };
+    const sketch = labelDrawing.sketchOnPlane("XY", 0);
+    return { solid: extrudeAndCombine(sketch, depth, solid ?? null, "cut") };
   } else {
     // EMBEDDED: flush label for multi-color printing.
     // Cut the label shape down into the base, then fill the void with
     // a separate label solid. The result is visually flat but the slicer
     // can assign different colors to base vs label.
-    const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
+    const sketch = labelDrawing.sketchOnPlane("XY", 0);
     if (solid) {
-      const baseCut = solid.cut(labelSolid);
-      // Count base triangles before combining so preview can color them differently
+      const baseCut = extrudeAndCombine(sketch, depth, solid, "cut");
+      const labelSolid = extrudeAndCombine(
+        labelDrawing.sketchOnPlane("XY", 0), depth, null, "fuse",
+      );
       const baseMesh = baseCut.mesh({ tolerance: 0.05, angularTolerance: 5 });
       const baseTriangleCount = baseMesh.triangles.length / 3;
-      // Combine as compound (separate bodies) so slicer can assign different colors
       const compound = compoundShapes([baseCut, labelSolid]) as unknown as Solid;
       return { solid: compound, baseTriangleCount };
     }
-    return { solid: labelSolid };
+    return { solid: extrudeAndCombine(sketch, depth, null, "fuse") };
   }
 }
 
