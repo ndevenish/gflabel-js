@@ -41,23 +41,31 @@ function parseSvgMeta(raw: string): ManifestEntry | null {
   return null;
 }
 
-// Merge manifest.json entries with metadata embedded in SVGs
+// Merge manifest.json entries with metadata embedded in SVGs.
+// manifest.json is the ordering authority; SVG-discovered entries fill in
+// anything not yet listed in the manifest.
 const manifest: ManifestEntry[] = (() => {
-  const byName = new Map<string, ManifestEntry>();
-
-  // First, add entries discovered from SVG data-* attributes
+  // Build SVG metadata lookup (not inserted into result yet)
+  const svgEntries = new Map<string, ManifestEntry>();
   for (const raw of Object.values(svgRawModules)) {
     const entry = parseSvgMeta(raw);
-    if (entry) byName.set(entry.name, entry);
+    if (entry) svgEntries.set(entry.name, entry);
   }
 
-  // Then, add/override with manifest.json entries (screw heads, symbols, etc.)
+  const byName = new Map<string, ManifestEntry>();
+
+  // Manifest entries first — this establishes display order
   for (const e of manifestData) {
     const mapped: ManifestEntry = {
       ...e,
       category: KEEP_CATEGORIES.has(e.category) ? e.category : "Electronic Symbols",
     };
     byName.set(mapped.name, mapped);
+  }
+
+  // Append any SVG-discovered entries not covered by the manifest
+  for (const [name, entry] of svgEntries) {
+    if (!byName.has(name)) byName.set(name, entry);
   }
 
   return Array.from(byName.values());
