@@ -227,28 +227,27 @@ export function BoltBuilder({ insertAtCursorRef }: BoltBuilderProps) {
         >
           Webbolt
         </button>
+        {mode === "bolt" && (
+          <>
+            <span style={{ fontSize: 11, color: "#6b7280", marginLeft: "auto" }}>Length</span>
+            <input
+              type="number"
+              min={1}
+              max={200}
+              value={length}
+              onChange={(e) => setLength(Math.max(1, Number(e.target.value) || 1))}
+              style={{
+                width: 72,
+                padding: "2px 4px",
+                border: "1px solid #d1d5db",
+                borderRadius: 4,
+                fontSize: 12,
+                boxSizing: "border-box",
+              }}
+            />
+          </>
+        )}
       </div>
-
-      {/* Length (bolt only) */}
-      {mode === "bolt" && (
-        <div style={rowStyle}>
-          <span style={labelStyle}>Length</span>
-          <input
-            type="number"
-            min={1}
-            max={200}
-            value={length}
-            onChange={(e) => setLength(Math.max(1, Number(e.target.value) || 1))}
-            style={{
-              width: 60,
-              padding: "2px 6px",
-              border: "1px solid #d1d5db",
-              borderRadius: 4,
-              fontSize: 12,
-            }}
-          />
-        </div>
-      )}
 
       {/* Head shape */}
       <div style={rowStyle}>
