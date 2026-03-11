@@ -3,12 +3,17 @@
  */
 
 import type { Drawing } from "replicad";
-import type { RenderOptions } from "../options.js";
+import type { RenderOptions, ColoredDrawing } from "../options.js";
 
 export interface FragmentRenderResult {
   /** The rendered drawing, or null for invisible fragments (spacers). */
   drawing: Drawing | null;
   width: number;
+  /**
+   * Optional: per-color drawings (e.g. from a multi-color SVG import).
+   * When present, overrides drawing + currentColor in the label assembler.
+   */
+  coloredDrawings?: ColoredDrawing[];
 }
 
 export abstract class Fragment {

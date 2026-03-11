@@ -67,7 +67,10 @@ async function main() {
   );
 
   // Import fragment index to trigger registrations
-  await import("./cad/fragments/index.js");
+  const { setSvgFileLoader } = await import("./cad/fragments/index.js");
+
+  // Set SVG file loader for {svg(...)} fragments
+  setSvgFileLoader((path) => readFileSync(path, "utf-8"));
 
   // Import CAD modules
   const { LabelRenderer, renderDividedLabel } = await import("./cad/label.js");
@@ -91,6 +94,21 @@ async function main() {
     .option("--font <name>", "Font (open-sans, jost, jost-semibold)", "jost-semibold")
     .option("--base-color <name>", "Base color (CSS color name)", "orange")
     .option("--label-color <name>", "Default label color (CSS color name)", "blue")
+    .option(
+      "--svg-mono <mode>",
+      "SVG mono mode: none, import, export, both (default: none)",
+      "none",
+    )
+    .option(
+      "--svg-base <mode>",
+      "Include base in SVG output: none, outline, solid (default: none)",
+      "none",
+    )
+    .option(
+      "--text-as-parts",
+      "Render text as per-character parts (best effort)",
+      false,
+    )
     .parse(process.argv);
 
   const opts = program.opts();
@@ -102,8 +120,26 @@ async function main() {
   }
 
   // Parse options
-  const { parseLabelStyle } = await import("./cad/options.js");
+  const { parseLabelStyle, SvgMono, SvgBase } = await import("./cad/options.js");
   const style = parseLabelStyle(opts.style);
+
+  function parseSvgMono(v: string): import("./cad/options.js").SvgMono {
+    const found = Object.values(SvgMono).find(
+      (s) => s === v.toLowerCase(),
+    );
+    if (!found) throw new Error(`Unknown --svg-mono value: ${v}`);
+    return found;
+  }
+  function parseSvgBase(v: string): import("./cad/options.js").SvgBase {
+    const found = Object.values(SvgBase).find(
+      (s) => s === v.toLowerCase(),
+    );
+    if (!found) throw new Error(`Unknown --svg-base value: ${v}`);
+    return found;
+  }
+
+  const svgMono = parseSvgMono(opts.svgMono as string);
+  const svgBase = parseSvgBase(opts.svgBase as string);
   setActiveFont(opts.font);
   const width = parseFloat(opts.width);
   const height = opts.height ? parseFloat(opts.height) : undefined;
@@ -123,6 +159,8 @@ async function main() {
     marginMm: parseFloat(opts.margin),
     columnGap: parseFloat(opts.columnGap),
     defaultColor: opts.labelColor as string,
+    textAsParts: opts.textAsParts as boolean,
+    svgMono,
   };
 
   // Build base
@@ -172,9 +210,39 @@ async function main() {
   const ext = extname(outputPath).toLowerCase();
 
   if (ext === ".svg") {
-    // SVG exports per-color layers
     const { coloredDrawingsToSVG } = await import("./cad/font.js");
-    const svgString = coloredDrawingsToSVG(labelDrawings);
+    const { fuseColoredDrawings } = await import("./cad/label.js");
+
+    let svgString: string;
+
+    if (svgMono === SvgMono.EXPORT || svgMono === SvgMono.BOTH) {
+      // Mono export: fuse all label drawings into a single layer
+      const fused = fuseColoredDrawings(labelDrawings);
+      svgString = fused
+        ? coloredDrawingsToSVG([{ drawing: fused, color: opts.labelColor as string }])
+        : coloredDrawingsToSVG([]);
+    } else {
+      // Per-color export
+      svgString = coloredDrawingsToSVG(labelDrawings);
+    }
+
+    if (svgBase !== SvgBase.NONE) {
+      // Prepend a base outline/solid layer to the SVG
+      // Uses the label area as a rectangular approximation of the base footprint
+      const { drawRectangle } = await import("replicad");
+      const baseRect = drawRectangle(baseResult.area.x, baseResult.area.y);
+      const baseDrawings = [{ drawing: baseRect, color: opts.baseColor as string }];
+      const baseSvg = coloredDrawingsToSVG(baseDrawings);
+      // Merge base SVG layers into the label SVG
+      const baseGroups = baseSvg.match(/<g\b[^>]*>[\s\S]*?<\/g>/g) ?? [];
+      const labelGroups = svgString.match(/<g\b[^>]*>[\s\S]*?<\/g>/g) ?? [];
+      const allGroups = [...baseGroups, ...labelGroups];
+      // Extract viewBox from the label drawing (more representative)
+      const vbMatch = svgString.match(/viewBox="([^"]+)"/);
+      const viewBox = vbMatch ? vbMatch[1] : "0 0 10 5";
+      svgString = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" stroke="none">${allGroups.join("")}</svg>`;
+    }
+
     writeFileSync(outputPath, svgString, "utf-8");
   } else if (ext === ".stl") {
     const blob = solid.blobSTL();

@@ -630,3 +630,58 @@ export function svgToDrawing(svgString: string): Drawing {
 
   return multiPolygonToDrawing(accumulated);
 }
+
+/**
+ * Extract the fill color from an SVG <path> attributes string.
+ * Checks both the fill attribute and inline style. Returns null if none found.
+ */
+function extractFillColor(attrs: string): string | null {
+  // Check style="fill:..." first (higher specificity)
+  const styleMatch = /\bstyle="([^"]+)"/.exec(attrs);
+  if (styleMatch) {
+    const fillInStyle = /(?:^|;)\s*fill\s*:\s*([^;]+)/.exec(styleMatch[1]!);
+    if (fillInStyle) {
+      const c = fillInStyle[1]!.trim();
+      if (c !== "none" && c !== "transparent") return c;
+    }
+  }
+  // Check fill="..."
+  const fillMatch = /\bfill="([^"]+)"/.exec(attrs);
+  if (fillMatch) {
+    const c = fillMatch[1]!;
+    if (c !== "none" && c !== "transparent") return c;
+  }
+  return null;
+}
+
+/**
+ * Parse an SVG string and return per-path colored drawings.
+ * Each <path> element becomes its own Drawing, colored by its fill attribute.
+ * Paths without a fill use defaultColor.
+ *
+ * Port of build123d's import_svg() with per-shape color support.
+ */
+export function svgToColoredDrawings(
+  svgString: string,
+  defaultColor: string,
+): Array<{ drawing: Drawing; color: string }> {
+  const pathRe = /<path\b([^>]*)>/g;
+  let m: RegExpExecArray | null;
+  const result: Array<{ drawing: Drawing; color: string }> = [];
+
+  while ((m = pathRe.exec(svgString)) !== null) {
+    const attrs = m[1]!;
+    const dMatch = /\bd="([^"]+)"/.exec(attrs);
+    if (!dMatch) continue;
+
+    const color = extractFillColor(attrs) ?? defaultColor;
+    const fillRule = /fill-rule="evenodd"/.test(attrs) ? "evenodd" as const : "nonzero" as const;
+    const contours = parseSvgPathD(dMatch[1]!);
+    if (contours.length === 0) continue;
+    const polygons = contoursToPolygons(contours, fillRule);
+    if (polygons.length === 0) continue;
+    result.push({ drawing: multiPolygonToDrawing(polygons), color });
+  }
+
+  return result;
+}

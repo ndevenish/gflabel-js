@@ -15,6 +15,7 @@ import "./spacer.js";
 import "./hardware.js";
 import "./layout.js";
 import "./symbols.js";
+import "./userSvg.js";
 
 // ── Spec parsing regex ──────────────────────────────────────────
 
@@ -90,6 +91,8 @@ export function specToFragments(spec: string): Fragment[] {
 
   return fragments;
 }
+
+export { setSvgFileLoader } from "./userSvg.js";
 
 export {
   Fragment,

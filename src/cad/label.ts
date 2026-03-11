@@ -270,12 +270,20 @@ export class LabelRenderer {
       if (!fragResult) continue;
       const fragWidth = fragResult.width;
 
-      if (frag.visible && fragResult.drawing) {
-        const translated = fragResult.drawing.translate([
-          x + fragWidth / 2,
-          0,
-        ]);
-        coloredDrawings.push({ drawing: translated, color: currentColor });
+      if (frag.visible) {
+        if (fragResult.coloredDrawings && fragResult.coloredDrawings.length > 0) {
+          for (const { drawing, color } of fragResult.coloredDrawings) {
+            coloredDrawings.push({
+              drawing: drawing.translate([x + fragWidth / 2, 0]),
+              color,
+            });
+          }
+        } else if (fragResult.drawing) {
+          coloredDrawings.push({
+            drawing: fragResult.drawing.translate([x + fragWidth / 2, 0]),
+            color: currentColor,
+          });
+        }
       }
       x += fragWidth;
     }

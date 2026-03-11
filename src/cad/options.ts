@@ -15,6 +15,19 @@ export enum LabelStyle {
   EMBEDDED = "embedded",
 }
 
+export enum SvgMono {
+  NONE = "none",
+  IMPORT = "import",
+  EXPORT = "export",
+  BOTH = "both",
+}
+
+export enum SvgBase {
+  NONE = "none",
+  OUTLINE = "outline",
+  SOLID = "solid",
+}
+
 export function parseLabelStyle(value: string): LabelStyle {
   const lower = value.toLowerCase();
   for (const style of Object.values(LabelStyle)) {
@@ -65,6 +78,10 @@ export interface RenderOptions {
   depth: number;
   /** Default label color (CSS color name or hex). Used for fragments with no explicit color. */
   defaultColor: string;
+  /** When true, TextFragment renders each character as a separate part. */
+  textAsParts: boolean;
+  /** Controls mono/color treatment for SVG import/export. */
+  svgMono: SvgMono;
 }
 
 export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
@@ -75,4 +92,6 @@ export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
   columnGap: 0.4,
   depth: 0.4,
   defaultColor: "blue",
+  textAsParts: false,
+  svgMono: SvgMono.NONE,
 };
