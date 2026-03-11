@@ -8,7 +8,7 @@ interface Props {
 export function DownloadButtons({ onEnsureRendered }: Props) {
   const [exporting, setExporting] = React.useState(false);
 
-  const handleExport = async (format: "stl" | "step" | "svg") => {
+  const handleExport = async (format: "stl" | "step" | "svg" | "3mf") => {
     setExporting(true);
     try {
       await onEnsureRendered();
@@ -65,6 +65,13 @@ export function DownloadButtons({ onEnsureRendered }: Props) {
           onClick={() => handleExport("svg")}
         >
           SVG
+        </button>
+        <button
+          style={btnStyle}
+          disabled={exporting}
+          onClick={() => handleExport("3mf")}
+        >
+          3MF
         </button>
       </div>
     </div>

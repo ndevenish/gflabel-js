@@ -66,7 +66,7 @@ interface RenderSvgRequest {
 interface ExportRequest {
   id: string;
   type: "EXPORT";
-  format: "stl" | "step" | "svg";
+  format: "stl" | "step" | "svg" | "3mf";
 }
 
 type WorkerRequest = RenderRequest | RenderSvgRequest | ExportRequest;
@@ -112,6 +112,7 @@ interface ErrorResponse {
 
 let lastSolid: Solid | null = null;
 let lastColoredDrawings: ColoredDrawing[] = [];
+let lastColorMap: ColorEntry[] | undefined;
 
 // ── Init ──────────────────────────────────────────────────────
 
@@ -201,6 +202,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         req.baseColor ?? "orange",
       );
       lastSolid = extrudeResult.solid;
+      lastColorMap = extrudeResult.colorMap;
 
       // Generate mesh for preview
       const mesh = extrudeResult.solid.mesh({ tolerance: 0.05, angularTolerance: 5 });
@@ -298,6 +300,12 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         buffer = await blob.arrayBuffer();
         mimeType = "model/step";
         filename = "label.step";
+      } else if (req.format === "3mf") {
+        const { exportTo3MF } = await import("./three_mf.js");
+        const data = await exportTo3MF(lastSolid, lastColorMap);
+        buffer = data.buffer;
+        mimeType = "model/3mf";
+        filename = "label.3mf";
       } else if (req.format === "svg") {
         if (lastColoredDrawings.length === 0) {
           throw new Error("No drawing to export — render first");

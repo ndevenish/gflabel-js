@@ -252,6 +252,10 @@ async function main() {
     const blob = solid.blobSTEP();
     const buffer = Buffer.from(await blob.arrayBuffer());
     writeFileSync(outputPath, buffer);
+  } else if (ext === ".3mf") {
+    const { exportTo3MF } = await import("./cad/three_mf.js");
+    const data = await exportTo3MF(solid, extrudeResult.colorMap);
+    writeFileSync(outputPath, data);
   } else {
     console.error(`Unsupported output format: ${ext}`);
     process.exit(1);

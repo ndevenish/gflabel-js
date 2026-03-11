@@ -142,7 +142,7 @@ export async function renderSVG(params: {
  * Export the last rendered solid to a file.
  */
 export async function exportFile(
-  format: "stl" | "step" | "svg",
+  format: "stl" | "step" | "svg" | "3mf",
 ): Promise<FileData> {
   await waitReady();
   const result = (await send({
