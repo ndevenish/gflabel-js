@@ -8,7 +8,13 @@
 import { Fragment, ModifierFragment, FRAGMENT_REGISTRY } from "./base.js";
 import { TextFragment, WhitespaceFragment } from "./text.js";
 import { SpacerFragment } from "./spacer.js";
-import { SplitterFragment, ColorFragment, SPLIT_RE } from "./layout.js";
+import {
+  SplitterFragment,
+  ColorFragment,
+  ScaleFragment,
+  OffsetFragment,
+  SPLIT_RE,
+} from "./layout.js";
 
 // Side-effect imports: registers all fragment types
 import "./spacer.js";
@@ -103,6 +109,8 @@ export {
   SpacerFragment,
   SplitterFragment,
   ColorFragment,
+  ScaleFragment,
+  OffsetFragment,
   SPLIT_RE,
 };
 export type { FragmentRenderResult } from "./base.js";

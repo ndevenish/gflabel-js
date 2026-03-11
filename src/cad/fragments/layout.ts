@@ -99,3 +99,73 @@ export class ColorFragment extends ModifierFragment {
 registerFragment(["color"], (name?: string) => {
   return new ColorFragment(name ?? "blue");
 });
+
+// ── Scale / Offset Fragments ────────────────────────────────────
+
+/**
+ * Parse KEY=VALUE arguments, returning a dict of lowercased keys → values.
+ * E.g. ["x=1.5", "y=2"] → { x: "1.5", y: "2" }
+ */
+function parseKVArgs(
+  allowed: string[],
+  args: string[],
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const arg of args) {
+    const eq = arg.indexOf("=");
+    if (eq < 0) throw new Error(`KEY=VALUE argument expected, got: ${arg}`);
+    const key = arg.slice(0, eq).trim().toLowerCase();
+    const value = arg.slice(eq + 1).trim();
+    if (!allowed.includes(key))
+      throw new Error(
+        `Unexpected key "${key}". Allowed: ${allowed.join(", ")}`,
+      );
+    result[key] = value;
+  }
+  return result;
+}
+
+/** Scales subsequent fragments on one or more axes. E.g. {scale(x=2, y=0.5)} */
+export class ScaleFragment extends ModifierFragment {
+  x: number;
+  y: number;
+  z: number;
+
+  constructor(...args: string[]) {
+    super();
+    if (args.length === 0 || args.length > 3)
+      throw new Error(
+        `scale() requires 1–3 arguments, got ${args.length}: ${args}`,
+      );
+    const kv = parseKVArgs(["x", "y", "z"], args);
+    this.x = parseFloat(kv["x"] ?? "1");
+    this.y = parseFloat(kv["y"] ?? "1");
+    this.z = parseFloat(kv["z"] ?? "1");
+  }
+}
+
+registerFragment(["scale"], (...args: string[]) => new ScaleFragment(...args));
+
+/** Offsets subsequent fragments on one or more axes. E.g. {offset(x=2, z=0.1)} */
+export class OffsetFragment extends ModifierFragment {
+  x: number;
+  y: number;
+  z: number;
+
+  constructor(...args: string[]) {
+    super();
+    if (args.length === 0 || args.length > 3)
+      throw new Error(
+        `offset() requires 1–3 arguments, got ${args.length}: ${args}`,
+      );
+    const kv = parseKVArgs(["x", "y", "z"], args);
+    this.x = parseFloat(kv["x"] ?? "0");
+    this.y = parseFloat(kv["y"] ?? "0");
+    this.z = parseFloat(kv["z"] ?? "0");
+  }
+}
+
+registerFragment(
+  ["offset"],
+  (...args: string[]) => new OffsetFragment(...args),
+);

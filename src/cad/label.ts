@@ -11,6 +11,8 @@ import {
   specToFragments,
   Fragment,
   ColorFragment,
+  ScaleFragment,
+  OffsetFragment,
   SPLIT_RE,
   type FragmentRenderResult,
 } from "./fragments/index.js";
@@ -255,15 +257,29 @@ export class LabelRenderer {
       0,
     );
 
-    // Assemble: position fragments left-to-right, track color per fragment
+    // Assemble: position fragments left-to-right, track color/scale/offset per fragment
     const coloredDrawings: ColoredDrawing[] = [];
     let currentColor = this.opts.defaultColor;
+    let currentXScale = 1;
+    let currentYScale = 1;
+    let currentZScale = 1;
+    let currentXOffset = 0;
+    let currentYOffset = 0;
+    let currentZOffset = 0;
     let x = -totalWidth / 2;
 
     for (const frag of frags) {
-      // Update color state for ColorFragment
+      // Update modifier state
       if (frag instanceof ColorFragment) {
         currentColor = frag.color;
+      } else if (frag instanceof ScaleFragment) {
+        currentXScale = frag.x;
+        currentYScale = frag.y;
+        currentZScale = frag.z;
+      } else if (frag instanceof OffsetFragment) {
+        currentXOffset = frag.x;
+        currentYOffset = frag.y;
+        currentZOffset = frag.z;
       }
 
       const fragResult = rendered.get(frag);
@@ -279,9 +295,20 @@ export class LabelRenderer {
             });
           }
         } else if (fragResult.drawing) {
+          // Apply x/y scale before translating to fragment position
+          let drawing = fragResult.drawing;
+          if (currentXScale !== 1)
+            drawing = drawing.stretch(currentXScale, [1, 0], [0, 0]);
+          if (currentYScale !== 1)
+            drawing = drawing.stretch(currentYScale, [0, 1], [0, 0]);
+          // Translate to position, including x/y offset
+          const posX = x + fragWidth / 2 + currentXOffset;
+          const posY = currentYOffset;
           coloredDrawings.push({
-            drawing: fragResult.drawing.translate([x + fragWidth / 2, 0]),
+            drawing: drawing.translate([posX, posY]),
             color: currentColor,
+            ...(currentZScale !== 1 ? { zScale: currentZScale } : {}),
+            ...(currentZOffset !== 0 ? { zOffset: currentZOffset } : {}),
           });
         }
       }

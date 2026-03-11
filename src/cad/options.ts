@@ -7,6 +7,10 @@ import type { Drawing } from "replicad";
 export interface ColoredDrawing {
   drawing: Drawing;
   color: string;
+  /** Z-axis scale applied to the extrusion depth (default 1). */
+  zScale?: number;
+  /** Z-axis offset in mm applied to the extrusion plane origin (default 0). */
+  zOffset?: number;
 }
 
 export enum LabelStyle {
