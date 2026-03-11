@@ -28,6 +28,7 @@ interface Settings {
   scaleY: number;
   scaleZ: number;
   baseColor: string;
+  labelColor: string;
 }
 
 const DEFAULTS: Settings = {
@@ -45,6 +46,7 @@ const DEFAULTS: Settings = {
   scaleY: 1,
   scaleZ: 1,
   baseColor: "#fdf26f",
+  labelColor: "#606060",
 };
 
 function loadSettings(): Settings {
@@ -106,6 +108,7 @@ export function ControlPanel({
   const [scaleY, setScaleY] = React.useState(saved.scaleY);
   const [scaleZ, setScaleZ] = React.useState(saved.scaleZ);
   const [baseColor, setBaseColor] = React.useState(saved.baseColor);
+  const [labelColor, setLabelColor] = React.useState(saved.labelColor);
 
   // Sync baseType when route-locked type changes
   React.useEffect(() => {
@@ -127,8 +130,8 @@ export function ControlPanel({
 
   // Persist settings on change
   React.useEffect(() => {
-    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ, baseColor });
-  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ, baseColor]);
+    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ, baseColor, labelColor });
+  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ, baseColor, labelColor]);
 
   const resetSettings = () => {
     const resetBase = lockedBaseType ?? DEFAULTS.baseType;
@@ -145,6 +148,7 @@ export function ControlPanel({
     setScaleY(DEFAULTS.scaleY);
     setScaleZ(DEFAULTS.scaleZ);
     setBaseColor(DEFAULTS.baseColor);
+    setLabelColor(DEFAULTS.labelColor);
     onPreviewModeChange(DEFAULTS.previewMode);
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -186,6 +190,7 @@ export function ControlPanel({
           options: fontOptions,
           scale,
           baseColor,
+          labelColor,
         });
         onMeshUpdate(mesh);
       }
@@ -208,6 +213,7 @@ export function ControlPanel({
     scaleY,
     scaleZ,
     baseColor,
+    labelColor,
     previewMode,
     onMeshUpdate,
     onSvgUpdate,
@@ -243,7 +249,7 @@ export function ControlPanel({
     }, delay);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec, baseType, width, height, version, style, font, depth, scaleX, scaleY, scaleZ, baseColor, previewMode, workerReady, autoRender]);
+  }, [spec, baseType, width, height, version, style, font, depth, scaleX, scaleY, scaleZ, baseColor, labelColor, previewMode, workerReady, autoRender]);
 
   const handleRender = doRender;
 
@@ -389,6 +395,13 @@ export function ControlPanel({
             <option value="jost">Jost</option>
             <option value="jost-semibold">Jost Semibold</option>
           </select>
+          <input
+            type="color"
+            value={labelColor}
+            onChange={(e) => setLabelColor(e.target.value)}
+            title="Default text colour"
+            style={{ width: 32, height: 32, padding: 2, border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer", flexShrink: 0 }}
+          />
         </div>
 
         <LabelSpecInput value={spec} onChange={setSpec} insertAtCursorRef={insertAtCursorRef} />
