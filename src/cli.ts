@@ -75,6 +75,7 @@ async function main() {
   // Import CAD modules
   const { LabelRenderer, renderDividedLabel } = await import("./cad/label.js");
   const { buildBase, extrudeLabel } = await import("./cad/bases/index.js");
+  const { compoundShapes } = await import("replicad");
   const { DEFAULT_RENDER_OPTIONS } = await import("./cad/options.js");
 
   const program = new Command();
@@ -163,33 +164,74 @@ async function main() {
     svgMono,
   };
 
-  // Build base
-  const baseResult = buildBase(baseConfig);
-
   // Process labels (replace \\n with actual newlines)
   const processedLabels = labels.map((l: string) => l.replace(/\\n/g, "\n"));
 
-  // Render
-  const renderer = new LabelRenderer(renderOptions);
-  let labelDrawings;
-  if (processedLabels.length > 1 || divisions > 1) {
-    labelDrawings = renderDividedLabel(
-      processedLabels,
-      baseResult.area,
-      divisions,
-      renderOptions,
-    );
-  } else {
-    const adjustedArea = {
-      x: baseResult.area.x - renderOptions.marginMm * 2,
-      y: baseResult.area.y - renderOptions.marginMm * 2,
-    };
-    labelDrawings = renderer.render(processedLabels[0]!, adjustedArea);
+  // Python behavior: divisions defaults to len(labels) → all on one physical label.
+  // Batch labels into groups of `divisions`, each batch = one physical label.
+  const effectiveDivisions = divisions || processedLabels.length;
+  const labelBatches: string[][] = [];
+  for (let i = 0; i < processedLabels.length; i += effectiveDivisions) {
+    labelBatches.push(processedLabels.slice(i, i + effectiveDivisions));
+  }
+  if (labelBatches.length === 0) labelBatches.push([""]);
+
+  // Render each physical label batch and stack vertically
+  const LABEL_GAP_MM = 2;
+  const allBodies: import("replicad").Solid[] = [];
+  const allColorMap: import("./cad/bases/index.js").ColorEntry[] = [];
+  let triangleOffset = 0;
+  let yOffset = 0;
+  let labelDrawings: import("./cad/label.js").ColoredDrawing[] = [];
+  let firstBaseArea = { x: 0, y: 0 };
+
+  for (let batchIdx = 0; batchIdx < labelBatches.length; batchIdx++) {
+    const batch = labelBatches[batchIdx]!;
+    const baseResult = buildBase(baseConfig);
+    if (batchIdx === 0) firstBaseArea = baseResult.area;
+    const renderer = new LabelRenderer(renderOptions);
+
+    let batchDrawings: import("./cad/label.js").ColoredDrawing[];
+    if (batch.length > 1 || effectiveDivisions > 1) {
+      batchDrawings = renderDividedLabel(batch, baseResult.area, effectiveDivisions, renderOptions);
+    } else {
+      const adjustedArea = {
+        x: baseResult.area.x - renderOptions.marginMm * 2,
+        y: baseResult.area.y - renderOptions.marginMm * 2,
+      };
+      batchDrawings = renderer.render(batch[0]!, adjustedArea);
+    }
+
+    // Track drawings (with Y offset) for SVG export
+    for (const cd of batchDrawings) {
+      labelDrawings.push({ ...cd, drawing: cd.drawing.translate([0, yOffset]) });
+    }
+
+    const extResult = extrudeLabel(baseResult, batchDrawings, style, depth, opts.baseColor as string);
+    const translated = extResult.solid.translate([0, yOffset, 0]);
+    allBodies.push(translated);
+
+    if (extResult.colorMap) {
+      for (const entry of extResult.colorMap) {
+        allColorMap.push({ ...entry, triangleStart: entry.triangleStart + triangleOffset });
+      }
+      triangleOffset += extResult.colorMap.reduce((sum, e) => sum + e.triangleCount, 0);
+    }
+
+    const physicalHeight = baseResult.solid
+      ? baseResult.solid.boundingBox.height
+      : baseResult.area.y;
+    yOffset -= physicalHeight + LABEL_GAP_MM;
   }
 
-  // Extrude and combine
-  const extrudeResult = extrudeLabel(baseResult, labelDrawings, style, depth, opts.baseColor as string);
-  const { solid } = extrudeResult;
+  const solid = allBodies.length === 1
+    ? allBodies[0]!
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : (compoundShapes as any)(allBodies);
+  const extrudeResult = {
+    solid,
+    colorMap: allColorMap.length > 0 ? allColorMap : undefined,
+  };
 
   // Print part tree
   if (extrudeResult.colorMap && extrudeResult.colorMap.length > 0) {
@@ -230,7 +272,7 @@ async function main() {
       // Prepend a base outline/solid layer to the SVG
       // Uses the label area as a rectangular approximation of the base footprint
       const { drawRectangle } = await import("replicad");
-      const baseRect = drawRectangle(baseResult.area.x, baseResult.area.y);
+      const baseRect = drawRectangle(firstBaseArea.x, firstBaseArea.y);
       const baseDrawings = [{ drawing: baseRect, color: opts.baseColor as string }];
       const baseSvg = coloredDrawingsToSVG(baseDrawings);
       // Merge base SVG layers into the label SVG

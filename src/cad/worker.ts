@@ -4,7 +4,7 @@
  * Initializes OpenCascade WASM, then handles RENDER and EXPORT messages.
  */
 
-import { setOC } from "replicad";
+import { setOC, compoundShapes } from "replicad";
 import type { Solid } from "replicad";
 import opencascade from "replicad-opencascadejs/src/replicad_single.js";
 import wasmUrl from "replicad-opencascadejs/src/replicad_single.wasm?url";
@@ -31,7 +31,7 @@ const fragmentSvgs = import.meta.glob("../assets/fragments/*.svg", {
 import { LabelRenderer, renderDividedLabel } from "./label.js";
 import type { ColoredDrawing } from "./label.js";
 import { buildBase, extrudeLabel } from "./bases/index.js";
-import type { BaseConfig, ColorEntry } from "./bases/index.js";
+import type { BaseConfig, ColorEntry, LabelBaseResult } from "./bases/index.js";
 import type { LabelStyle, RenderOptions } from "./options.js";
 import { DEFAULT_RENDER_OPTIONS } from "./options.js";
 
@@ -114,6 +114,38 @@ let lastSolid: Solid | null = null;
 let lastColoredDrawings: ColoredDrawing[] = [];
 let lastColorMap: ColorEntry[] | undefined;
 
+// ── Constants ────────────────────────────────────────────────
+
+/** Separator line used in the spec textarea to split multiple physical labels. */
+const PHYSICAL_LABEL_SEP_RE = /\n[ \t]*---[ \t]*\n/;
+
+/** Gap in mm between stacked physical labels. */
+const LABEL_GAP_MM = 2;
+
+// ── Helpers ───────────────────────────────────────────────────
+
+/**
+ * Render a single physical label spec to ColoredDrawing[].
+ * Handles `\0`-separated column specs (for divided labels).
+ */
+function renderSpecDrawings(
+  spec: string,
+  baseResult: LabelBaseResult,
+  options: RenderOptions,
+  divisions?: number,
+): ColoredDrawing[] {
+  const renderer = new LabelRenderer(options);
+  const specs = spec.split("\0");
+  if (specs.length > 1 || (divisions && divisions > 1)) {
+    return renderDividedLabel(specs, baseResult.area, divisions ?? specs.length, options);
+  }
+  const adjustedArea = {
+    x: baseResult.area.x - options.marginMm * 2,
+    y: baseResult.area.y - options.marginMm * 2,
+  };
+  return renderer.render(specs[0]!, adjustedArea);
+}
+
 // ── Init ──────────────────────────────────────────────────────
 
 async function init(): Promise<void> {
@@ -168,44 +200,79 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
 
       setActiveFont(options.font.font ?? "open-sans");
 
-      // Build the base (pass style so pred base can create recess for embossed)
-      const baseResult = buildBase({ ...req.base, style: req.style });
+      const physicalSpecs = req.spec.split(PHYSICAL_LABEL_SEP_RE).filter((s) => s.trim());
 
-      // Render the label
-      const renderer = new LabelRenderer(options);
-      const specs = req.spec.split("\0"); // Allow multiple labels separated by NUL
-      let labelDrawings: ColoredDrawing[];
+      let resultSolid: Solid;
+      let resultColorMap: ColorEntry[] | undefined;
+      const allColoredDrawings: ColoredDrawing[] = [];
 
-      if (specs.length > 1 || (req.divisions && req.divisions > 1)) {
-        labelDrawings = renderDividedLabel(
-          specs,
-          baseResult.area,
-          req.divisions ?? specs.length,
-          options,
-        );
+      if (physicalSpecs.length > 1) {
+        // Multiple physical labels — render each and stack vertically
+        const allBodies: Solid[] = [];
+        const allColorMap: ColorEntry[] = [];
+        let triangleOffset = 0;
+        let yOffset = 0;
+
+        for (const pspec of physicalSpecs) {
+          const baseResult = buildBase({ ...req.base, style: req.style });
+          const drawings = renderSpecDrawings(pspec, baseResult, options, req.divisions);
+
+          // Track drawings with Y translation for export
+          for (const cd of drawings) {
+            allColoredDrawings.push({ ...cd, drawing: cd.drawing.translate([0, yOffset]) });
+          }
+
+          const extResult = extrudeLabel(
+            baseResult,
+            drawings,
+            req.style,
+            req.base.depth ?? options.depth,
+            req.baseColor ?? "orange",
+          );
+
+          const translated = extResult.solid.translate([0, yOffset, 0]);
+          allBodies.push(translated);
+
+          if (extResult.colorMap) {
+            for (const entry of extResult.colorMap) {
+              allColorMap.push({ ...entry, triangleStart: entry.triangleStart + triangleOffset });
+            }
+            triangleOffset += extResult.colorMap.reduce((sum, e) => sum + e.triangleCount, 0);
+          }
+
+          const physicalHeight = baseResult.solid
+            ? baseResult.solid.boundingBox.height
+            : baseResult.area.y;
+          yOffset -= physicalHeight + LABEL_GAP_MM;
+        }
+
+        resultSolid = allBodies.length === 1
+          ? allBodies[0]!
+          : (compoundShapes(allBodies) as unknown as Solid);
+        resultColorMap = allColorMap.length > 0 ? allColorMap : undefined;
       } else {
-        const adjustedArea = {
-          x: baseResult.area.x - options.marginMm * 2,
-          y: baseResult.area.y - options.marginMm * 2,
-        };
-        labelDrawings = renderer.render(specs[0]!, adjustedArea);
+        // Single physical label
+        const baseResult = buildBase({ ...req.base, style: req.style });
+        const drawings = renderSpecDrawings(req.spec, baseResult, options, req.divisions);
+        allColoredDrawings.push(...drawings);
+
+        const extResult = extrudeLabel(
+          baseResult,
+          drawings,
+          req.style,
+          req.base.depth ?? options.depth,
+          req.baseColor ?? "orange",
+        );
+        resultSolid = extResult.solid;
+        resultColorMap = extResult.colorMap;
       }
 
-      lastColoredDrawings = labelDrawings;
-
-      // Extrude label onto base
-      const extrudeResult = extrudeLabel(
-        baseResult,
-        labelDrawings,
-        req.style,
-        req.base.depth ?? options.depth,
-        req.baseColor ?? "orange",
-      );
-      lastSolid = extrudeResult.solid;
-      lastColorMap = extrudeResult.colorMap;
+      lastColoredDrawings = allColoredDrawings;
+      lastSolid = resultSolid;
+      lastColorMap = resultColorMap;
 
       // Generate mesh for preview
-      const mesh = extrudeResult.solid.mesh({ tolerance: 0.05, angularTolerance: 5 });
+      const mesh = resultSolid.mesh({ tolerance: 0.05, angularTolerance: 5 });
       const faces = new Float32Array(mesh.vertices);
       const normals = new Float32Array(mesh.normals);
       const indices = new Uint32Array(mesh.triangles);
@@ -235,8 +302,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         faces,
         normals,
         indices,
-        baseTriangleCount: extrudeResult.baseTriangleCount,
-        colorMap: extrudeResult.colorMap,
+        colorMap: resultColorMap,
       };
       self.postMessage(msg, { transfer: [faces.buffer, normals.buffer, indices.buffer] });
     } else if (req.type === "RENDER_SVG") {
@@ -247,33 +313,26 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
 
       setActiveFont(options.font.font ?? "open-sans");
 
-      // Build the base only for area dimensions
-      const baseResult = buildBase({ ...req.base, style: req.style });
+      const physicalSpecs = req.spec.split(PHYSICAL_LABEL_SEP_RE).filter((s) => s.trim());
+      const allDrawings: ColoredDrawing[] = [];
+      let yOffset = 0;
 
-      // Render label drawing (2D only — no extrude/mesh)
-      const renderer = new LabelRenderer(options);
-      const specs = req.spec.split("\0");
-      let labelDrawings: ColoredDrawing[];
-
-      if (specs.length > 1 || (req.divisions && req.divisions > 1)) {
-        labelDrawings = renderDividedLabel(
-          specs,
-          baseResult.area,
-          req.divisions ?? specs.length,
-          options,
-        );
-      } else {
-        const adjustedArea = {
-          x: baseResult.area.x - options.marginMm * 2,
-          y: baseResult.area.y - options.marginMm * 2,
-        };
-        labelDrawings = renderer.render(specs[0]!, adjustedArea);
+      for (const pspec of physicalSpecs) {
+        const baseResult = buildBase({ ...req.base, style: req.style });
+        const drawings = renderSpecDrawings(pspec, baseResult, options, req.divisions);
+        for (const cd of drawings) {
+          allDrawings.push({ ...cd, drawing: cd.drawing.translate([0, yOffset]) });
+        }
+        const physicalHeight = baseResult.solid
+          ? baseResult.solid.boundingBox.height
+          : baseResult.area.y;
+        yOffset -= physicalHeight + LABEL_GAP_MM;
       }
 
-      lastColoredDrawings = labelDrawings;
+      lastColoredDrawings = allDrawings;
 
       const { coloredDrawingsToSVG } = await import("./font.js");
-      const svgString = coloredDrawingsToSVG(labelDrawings);
+      const svgString = coloredDrawingsToSVG(allDrawings);
 
       const msg: SvgResponse = {
         id: req.id,

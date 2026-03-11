@@ -68,7 +68,7 @@ export function LabelSpecInput({ value, onChange, insertAtCursorRef }: Props) {
         }}
       >
         Use \n for newlines, {"{nut}"}, {"{bolt(20)}"}, {"{washer}"},{" "}
-        {"{...}"} for expander, {"{|}"} for columns
+        {"{...}"} for expander, {"{|}"} for columns, <code>---</code> on its own line for multiple labels
       </div>
     </div>
   );
