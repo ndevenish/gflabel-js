@@ -27,6 +27,7 @@ interface Settings {
   scaleX: number;
   scaleY: number;
   scaleZ: number;
+  baseColor: string;
 }
 
 const DEFAULTS: Settings = {
@@ -43,6 +44,7 @@ const DEFAULTS: Settings = {
   scaleX: 1,
   scaleY: 1,
   scaleZ: 1,
+  baseColor: "#fdf26f",
 };
 
 function loadSettings(): Settings {
@@ -103,6 +105,7 @@ export function ControlPanel({
   const [scaleX, setScaleX] = React.useState(saved.scaleX);
   const [scaleY, setScaleY] = React.useState(saved.scaleY);
   const [scaleZ, setScaleZ] = React.useState(saved.scaleZ);
+  const [baseColor, setBaseColor] = React.useState(saved.baseColor);
 
   // Sync baseType when route-locked type changes
   React.useEffect(() => {
@@ -124,8 +127,8 @@ export function ControlPanel({
 
   // Persist settings on change
   React.useEffect(() => {
-    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ });
-  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ]);
+    saveSettings({ baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ, baseColor });
+  }, [baseType, width, height, version, style, font, spec, autoRender, previewMode, depth, scaleX, scaleY, scaleZ, baseColor]);
 
   const resetSettings = () => {
     const resetBase = lockedBaseType ?? DEFAULTS.baseType;
@@ -141,6 +144,7 @@ export function ControlPanel({
     setScaleX(DEFAULTS.scaleX);
     setScaleY(DEFAULTS.scaleY);
     setScaleZ(DEFAULTS.scaleZ);
+    setBaseColor(DEFAULTS.baseColor);
     onPreviewModeChange(DEFAULTS.previewMode);
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -181,6 +185,7 @@ export function ControlPanel({
           style,
           options: fontOptions,
           scale,
+          baseColor,
         });
         onMeshUpdate(mesh);
       }
@@ -202,6 +207,7 @@ export function ControlPanel({
     scaleX,
     scaleY,
     scaleZ,
+    baseColor,
     previewMode,
     onMeshUpdate,
     onSvgUpdate,
@@ -237,7 +243,7 @@ export function ControlPanel({
     }, delay);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec, baseType, width, height, version, style, font, depth, scaleX, scaleY, scaleZ, previewMode, workerReady, autoRender]);
+  }, [spec, baseType, width, height, version, style, font, depth, scaleX, scaleY, scaleZ, baseColor, previewMode, workerReady, autoRender]);
 
   const handleRender = doRender;
 
@@ -420,6 +426,17 @@ export function ControlPanel({
                 onChange={(e) => setDepth(parseFloat(e.target.value) || 0.4)}
                 style={{ flex: 1, padding: "4px 6px", width: 60 }}
               />
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label style={{ whiteSpace: "nowrap", minWidth: 80 }}>Base colour</label>
+              <input
+                type="color"
+                value={baseColor}
+                onChange={(e) => setBaseColor(e.target.value)}
+                style={{ width: 40, height: 28, padding: 2, border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer" }}
+              />
+              <span style={{ color: "#6b7280", fontFamily: "monospace", fontSize: 12 }}>{baseColor}</span>
             </div>
 
             <div style={{ fontWeight: 600, marginTop: 4 }}>Scale</div>
