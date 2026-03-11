@@ -150,7 +150,22 @@ async function main() {
   }
 
   // Extrude and combine
-  const { solid } = extrudeLabel(baseResult, labelDrawings, style, depth, opts.baseColor as string);
+  const extrudeResult = extrudeLabel(baseResult, labelDrawings, style, depth, opts.baseColor as string);
+  const { solid } = extrudeResult;
+
+  // Print part tree
+  if (extrudeResult.colorMap && extrudeResult.colorMap.length > 0) {
+    const parts = extrudeResult.colorMap;
+    console.log("Compound");
+    parts.forEach((entry, i) => {
+      const isLast = i === parts.length - 1;
+      const prefix = isLast ? "└──" : "├──";
+      const name = i === 0 && parts.length > 1 ? "Base" : "Label";
+      console.log(`  ${prefix} ${name} [${entry.color}] (${entry.triangleCount} triangles)`);
+    });
+  } else {
+    console.log(`Solid (${style})`);
+  }
 
   // Export
   const outputPath = resolve(opts.output);
