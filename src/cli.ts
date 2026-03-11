@@ -89,6 +89,8 @@ async function main() {
     .option("--margin <mm>", "Margin in mm", "0.4")
     .option("--column-gap <mm>", "Column gap in mm", "0.4")
     .option("--font <name>", "Font (open-sans, jost, jost-semibold)", "jost-semibold")
+    .option("--base-color <name>", "Base color (CSS color name)", "orange")
+    .option("--label-color <name>", "Default label color (CSS color name)", "blue")
     .parse(process.argv);
 
   const opts = program.opts();
@@ -120,6 +122,7 @@ async function main() {
     ...DEFAULT_RENDER_OPTIONS,
     marginMm: parseFloat(opts.margin),
     columnGap: parseFloat(opts.columnGap),
+    defaultColor: opts.labelColor as string,
   };
 
   // Build base
@@ -130,9 +133,9 @@ async function main() {
 
   // Render
   const renderer = new LabelRenderer(renderOptions);
-  let labelDrawing;
+  let labelDrawings;
   if (processedLabels.length > 1 || divisions > 1) {
-    labelDrawing = renderDividedLabel(
+    labelDrawings = renderDividedLabel(
       processedLabels,
       baseResult.area,
       divisions,
@@ -143,20 +146,20 @@ async function main() {
       x: baseResult.area.x - renderOptions.marginMm * 2,
       y: baseResult.area.y - renderOptions.marginMm * 2,
     };
-    labelDrawing = renderer.render(processedLabels[0]!, adjustedArea);
+    labelDrawings = renderer.render(processedLabels[0]!, adjustedArea);
   }
 
   // Extrude and combine
-  const { solid } = extrudeLabel(baseResult, labelDrawing, style, depth);
+  const { solid } = extrudeLabel(baseResult, labelDrawings, style, depth, opts.baseColor as string);
 
   // Export
   const outputPath = resolve(opts.output);
   const ext = extname(outputPath).toLowerCase();
 
   if (ext === ".svg") {
-    // SVG exports the 2D label drawing directly
-    const { drawingToFilledSVG } = await import("./cad/font.js");
-    const svgString = drawingToFilledSVG(labelDrawing);
+    // SVG exports per-color layers
+    const { coloredDrawingsToSVG } = await import("./cad/font.js");
+    const svgString = coloredDrawingsToSVG(labelDrawings);
     writeFileSync(outputPath, svgString, "utf-8");
   } else if (ext === ".stl") {
     const blob = solid.blobSTL();

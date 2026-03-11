@@ -2,6 +2,13 @@
  * Port of options.py — rendering configuration types.
  */
 
+import type { Drawing } from "replicad";
+
+export interface ColoredDrawing {
+  drawing: Drawing;
+  color: string;
+}
+
 export enum LabelStyle {
   EMBOSSED = "embossed",
   DEBOSSED = "debossed",
@@ -54,6 +61,10 @@ export interface RenderOptions {
   font: FontOptions;
   allowOverheight: boolean;
   columnGap: number;
+  /** Extrusion depth in mm (positive magnitude; style determines direction). */
+  depth: number;
+  /** Default label color (CSS color name or hex). Used for fragments with no explicit color. */
+  defaultColor: string;
 }
 
 export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
@@ -62,4 +73,6 @@ export const DEFAULT_RENDER_OPTIONS: RenderOptions = {
   font: DEFAULT_FONT_OPTIONS,
   allowOverheight: true,
   columnGap: 0.4,
+  depth: 0.4,
+  defaultColor: "blue",
 };

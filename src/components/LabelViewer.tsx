@@ -2,14 +2,48 @@ import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
-import type { MeshData } from "../cad/workerClient.js";
+import type { MeshData, ColorEntry } from "../cad/workerClient.js";
 
 interface Props {
   meshData: MeshData | null;
 }
 
-const BASE_COLOR = new THREE.Color("#fdf26f"); // yellow/gold
-const LABEL_COLOR = new THREE.Color("#606060"); // near-black
+const COLOR_BASE = new THREE.Color("#fdf26f"); // yellow/gold
+const COLOR_LABEL = new THREE.Color("#606060"); // near-black
+
+/** Resolve a triangle's color using colorMap (if present) or Z-position heuristic. */
+function resolveColor(
+  t: number,
+  colorMap: ColorEntry[] | undefined,
+  style: string,
+  baseTriangleCount: number | undefined,
+  srcPos: Float32Array,
+  i0: number,
+  i1: number,
+  i2: number,
+): THREE.Color {
+  if (colorMap) {
+    for (const entry of colorMap) {
+      if (t >= entry.triangleStart && t < entry.triangleStart + entry.triangleCount) {
+        return new THREE.Color(entry.color);
+      }
+    }
+    return COLOR_BASE;
+  }
+
+  // Z-position heuristic fallback (used for debossed, which has no colorMap)
+  let isLabel: boolean;
+  if (style === "embedded" && baseTriangleCount != null) {
+    isLabel = t >= baseTriangleCount;
+  } else if (style === "debossed") {
+    const minZ = Math.min(srcPos[i0 * 3 + 2]!, srcPos[i1 * 3 + 2]!, srcPos[i2 * 3 + 2]!);
+    isLabel = minZ < -0.001;
+  } else {
+    const maxZ = Math.max(srcPos[i0 * 3 + 2]!, srcPos[i1 * 3 + 2]!, srcPos[i2 * 3 + 2]!);
+    isLabel = maxZ > 0.001;
+  }
+  return isLabel ? COLOR_LABEL : COLOR_BASE;
+}
 
 function LabelMesh({ meshData }: { meshData: MeshData }) {
   const geometry = React.useMemo(() => {
@@ -38,25 +72,10 @@ function LabelMesh({ meshData }: { meshData: MeshData }) {
         normals[t * 9 + 6 + c] = srcNorm[i2 * 3 + c]!;
       }
 
-      // Color by style:
-      // - Embossed: label faces have any vertex above z=0
-      // - Debossed: label faces have any vertex below z=0
-      // - Embedded: label is the second body in compound (after baseTriangleCount)
-      let isLabel: boolean;
-      if (meshData.style === "embedded" && meshData.baseTriangleCount != null) {
-        isLabel = t >= meshData.baseTriangleCount;
-      } else if (meshData.style === "debossed") {
-        const minZ = Math.min(
-          srcPos[i0 * 3 + 2]!, srcPos[i1 * 3 + 2]!, srcPos[i2 * 3 + 2]!,
-        );
-        isLabel = minZ < -0.001;
-      } else {
-        const maxZ = Math.max(
-          srcPos[i0 * 3 + 2]!, srcPos[i1 * 3 + 2]!, srcPos[i2 * 3 + 2]!,
-        );
-        isLabel = maxZ > 0.001;
-      }
-      const color = isLabel ? LABEL_COLOR : BASE_COLOR;
+      const color = resolveColor(
+        t, meshData.colorMap, meshData.style, meshData.baseTriangleCount,
+        srcPos, i0, i1, i2,
+      );
 
       for (let v = 0; v < 3; v++) {
         colors[t * 9 + v * 3] = color.r;

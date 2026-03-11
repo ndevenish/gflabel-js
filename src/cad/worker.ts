@@ -29,8 +29,9 @@ const fragmentSvgs = import.meta.glob("../assets/fragments/*.svg", {
   query: "?raw",
 }) as Record<string, string>;
 import { LabelRenderer, renderDividedLabel } from "./label.js";
+import type { ColoredDrawing } from "./label.js";
 import { buildBase, extrudeLabel } from "./bases/index.js";
-import type { BaseConfig } from "./bases/index.js";
+import type { BaseConfig, ColorEntry } from "./bases/index.js";
 import type { LabelStyle, RenderOptions } from "./options.js";
 import { DEFAULT_RENDER_OPTIONS } from "./options.js";
 
@@ -48,6 +49,8 @@ interface RenderRequest {
   options?: Partial<RenderOptions>;
   divisions?: number;
   scale?: [number, number, number];
+  baseColor?: string;
+  labelColor?: string;
 }
 
 interface RenderSvgRequest {
@@ -79,6 +82,7 @@ interface MeshResponse {
   normals: Float32Array;
   indices: Uint32Array;
   baseTriangleCount?: number;
+  colorMap?: ColorEntry[];
 }
 
 interface FileResponse {
@@ -107,7 +111,7 @@ interface ErrorResponse {
 // ── State ──────────────────────────────────────────────────────
 
 let lastSolid: Solid | null = null;
-let lastDrawing: import("replicad").Drawing | null = null;
+let lastColoredDrawings: ColoredDrawing[] = [];
 
 // ── Init ──────────────────────────────────────────────────────
 
@@ -158,6 +162,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       const options: RenderOptions = {
         ...DEFAULT_RENDER_OPTIONS,
         ...req.options,
+        ...(req.labelColor ? { defaultColor: req.labelColor } : {}),
       };
 
       setActiveFont(options.font.font ?? "open-sans");
@@ -168,10 +173,10 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       // Render the label
       const renderer = new LabelRenderer(options);
       const specs = req.spec.split("\0"); // Allow multiple labels separated by NUL
-      let labelDrawing;
+      let labelDrawings: ColoredDrawing[];
 
       if (specs.length > 1 || (req.divisions && req.divisions > 1)) {
-        labelDrawing = renderDividedLabel(
+        labelDrawings = renderDividedLabel(
           specs,
           baseResult.area,
           req.divisions ?? specs.length,
@@ -182,17 +187,18 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
           x: baseResult.area.x - options.marginMm * 2,
           y: baseResult.area.y - options.marginMm * 2,
         };
-        labelDrawing = renderer.render(specs[0]!, adjustedArea);
+        labelDrawings = renderer.render(specs[0]!, adjustedArea);
       }
 
-      lastDrawing = labelDrawing;
+      lastColoredDrawings = labelDrawings;
 
       // Extrude label onto base
       const extrudeResult = extrudeLabel(
         baseResult,
-        labelDrawing,
+        labelDrawings,
         req.style,
-        req.base.depth ?? 0.4,
+        req.base.depth ?? options.depth,
+        req.baseColor ?? "orange",
       );
       lastSolid = extrudeResult.solid;
 
@@ -228,6 +234,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         normals,
         indices,
         baseTriangleCount: extrudeResult.baseTriangleCount,
+        colorMap: extrudeResult.colorMap,
       };
       self.postMessage(msg, { transfer: [faces.buffer, normals.buffer, indices.buffer] });
     } else if (req.type === "RENDER_SVG") {
@@ -244,10 +251,10 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       // Render label drawing (2D only — no extrude/mesh)
       const renderer = new LabelRenderer(options);
       const specs = req.spec.split("\0");
-      let labelDrawing;
+      let labelDrawings: ColoredDrawing[];
 
       if (specs.length > 1 || (req.divisions && req.divisions > 1)) {
-        labelDrawing = renderDividedLabel(
+        labelDrawings = renderDividedLabel(
           specs,
           baseResult.area,
           req.divisions ?? specs.length,
@@ -258,13 +265,13 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
           x: baseResult.area.x - options.marginMm * 2,
           y: baseResult.area.y - options.marginMm * 2,
         };
-        labelDrawing = renderer.render(specs[0]!, adjustedArea);
+        labelDrawings = renderer.render(specs[0]!, adjustedArea);
       }
 
-      lastDrawing = labelDrawing;
+      lastColoredDrawings = labelDrawings;
 
-      const { drawingToFilledSVG } = await import("./font.js");
-      const svgString = drawingToFilledSVG(labelDrawing);
+      const { coloredDrawingsToSVG } = await import("./font.js");
+      const svgString = coloredDrawingsToSVG(labelDrawings);
 
       const msg: SvgResponse = {
         id: req.id,
@@ -292,11 +299,11 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
         mimeType = "model/step";
         filename = "label.step";
       } else if (req.format === "svg") {
-        if (!lastDrawing) {
+        if (lastColoredDrawings.length === 0) {
           throw new Error("No drawing to export — render first");
         }
-        const { drawingToFilledSVG } = await import("./font.js");
-        const svgString = drawingToFilledSVG(lastDrawing);
+        const { coloredDrawingsToSVG } = await import("./font.js");
+        const svgString = coloredDrawingsToSVG(lastColoredDrawings);
         buffer = new TextEncoder().encode(svgString).buffer;
         mimeType = "image/svg+xml";
         filename = "label.svg";

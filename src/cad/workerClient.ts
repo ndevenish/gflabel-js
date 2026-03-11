@@ -6,12 +6,19 @@
 import type { BaseConfig } from "./bases/base.js";
 import type { LabelStyle, RenderOptions } from "./options.js";
 
+export interface ColorEntry {
+  triangleStart: number;
+  triangleCount: number;
+  color: string;
+}
+
 export interface MeshData {
   faces: Float32Array;
   normals: Float32Array;
   indices: Uint32Array;
   style: string;
   baseTriangleCount?: number;
+  colorMap?: ColorEntry[];
 }
 
 export interface SvgData {
@@ -102,13 +109,15 @@ export async function renderLabel(params: {
   options?: Partial<RenderOptions>;
   divisions?: number;
   scale?: [number, number, number];
+  baseColor?: string;
+  labelColor?: string;
 }): Promise<MeshData> {
   await waitReady();
   const result = (await send({
     type: "RENDER",
     ...params,
-  })) as { type: "MESH"; faces: Float32Array; normals: Float32Array; indices: Uint32Array; baseTriangleCount?: number };
-  return { faces: result.faces, normals: result.normals, indices: result.indices, style: params.style, baseTriangleCount: result.baseTriangleCount };
+  })) as { type: "MESH"; faces: Float32Array; normals: Float32Array; indices: Uint32Array; baseTriangleCount?: number; colorMap?: ColorEntry[] };
+  return { faces: result.faces, normals: result.normals, indices: result.indices, style: params.style, baseTriangleCount: result.baseTriangleCount, colorMap: result.colorMap };
 }
 
 /**

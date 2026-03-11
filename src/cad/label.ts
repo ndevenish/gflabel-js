@@ -2,17 +2,20 @@
  * Label rendering engine — port of label.py.
  *
  * LabelRenderer takes a spec string and available area, and produces
- * a single Drawing representing the complete label content.
+ * a list of ColoredDrawing entries representing the complete label content.
  */
 
 import { Drawing, drawRectangle } from "replicad";
-import type { RenderOptions } from "./options.js";
+import type { RenderOptions, ColoredDrawing } from "./options.js";
 import {
   specToFragments,
   Fragment,
+  ColorFragment,
   SPLIT_RE,
   type FragmentRenderResult,
 } from "./fragments/index.js";
+
+export type { ColoredDrawing } from "./options.js";
 
 /** Utility: split an iterable into chunks of n */
 function batched<T>(arr: T[], n: number): T[][] {
@@ -34,7 +37,7 @@ export class LabelRenderer {
   /**
    * Render a complete label spec (potentially multi-column) within the given area.
    */
-  render(spec: string, area: Vec2): Drawing {
+  render(spec: string, area: Vec2): ColoredDrawing[] {
     // Column splitting via SplitterFragment.SPLIT_RE
     const columns: string[] = [];
     const columnProportions: number[] = [];
@@ -102,7 +105,7 @@ export class LabelRenderer {
     );
 
     // Render each column and position it
-    let result: Drawing | null = null;
+    const result: ColoredDrawing[] = [];
     let x = -area.x / 2;
 
     for (let i = 0; i < columns.length; i++) {
@@ -110,19 +113,21 @@ export class LabelRenderer {
       const width = columnWidths[i]!;
 
       if (colSpec.trim()) {
-        const colDrawing = this.doMultilineRender(colSpec, {
+        const colDrawings = this.doMultilineRender(colSpec, {
           x: width,
           y: area.y,
         });
-        // Position: translate so column center is at (x + width/2, 0)
-        const translated = colDrawing.translate([x + width / 2, 0]);
-        result = result ? result.fuse(translated) : translated;
+        // Translate column center to (x + width/2, 0)
+        const offsetX = x + width / 2;
+        for (const { drawing, color } of colDrawings) {
+          result.push({ drawing: drawing.translate([offsetX, 0]), color });
+        }
       }
 
       x += width + this.opts.columnGap;
     }
 
-    return result ?? drawRectangle(0.001, 0.001);
+    return result;
   }
 
   /**
@@ -132,7 +137,7 @@ export class LabelRenderer {
     spec: string,
     area: Vec2,
     isRescaling: boolean = false,
-  ): Drawing {
+  ): ColoredDrawing[] {
     const lines = spec.split("\n");
     if (spec.endsWith("\n")) lines.push("");
 
@@ -142,7 +147,7 @@ export class LabelRenderer {
       (area.y - this.opts.lineSpacingMm * (lines.length - 1)) / lines.length;
 
     // Render each line
-    let result: Drawing | null = null;
+    const result: ColoredDrawing[] = [];
 
     for (let n = 0; n < lines.length; n++) {
       const line = lines[n]!;
@@ -153,30 +158,39 @@ export class LabelRenderer {
         (rowHeight + this.opts.lineSpacingMm) * n -
         rowHeight / 2;
 
-      const lineDrawing = this.renderSingleLine(line, {
+      const lineDrawings = this.renderSingleLine(line, {
         x: area.x,
         y: rowHeight,
       }, this.opts.allowOverheight);
 
-      const translated = lineDrawing.translate([0, renderY]);
-      result = result ? result.fuse(translated) : translated;
+      for (const { drawing, color } of lineDrawings) {
+        result.push({ drawing: drawing.translate([0, renderY]), color });
+      }
     }
 
-    if (!result) return drawRectangle(0.001, 0.001);
+    if (result.length === 0) return [];
 
-    // Check if rescaling is needed
-    const bb = result.boundingBox;
-    const scaleToMaxWidth = area.x / bb.width;
-    const scaleToMaxHeight = area.y / bb.height;
-    const toScale = Math.min(scaleToMaxHeight, scaleToMaxWidth, 1);
+    // Check if rescaling is needed — fuse all temporarily for BB measurement
+    if (!isRescaling) {
+      let fusedForBb: Drawing | null = null;
+      for (const { drawing } of result) {
+        fusedForBb = fusedForBb ? fusedForBb.fuse(drawing) : drawing;
+      }
+      if (fusedForBb) {
+        const bb = fusedForBb.boundingBox;
+        const scaleToMaxWidth = area.x / bb.width;
+        const scaleToMaxHeight = area.y / bb.height;
+        const toScale = Math.min(scaleToMaxHeight, scaleToMaxWidth, 1);
 
-    if (toScale < 0.99 && !isRescaling) {
-      const heightToScale = Math.min(area.y, bb.height);
-      return this.doMultilineRender(
-        spec,
-        { x: area.x, y: heightToScale * toScale * 0.95 },
-        true,
-      );
+        if (toScale < 0.99) {
+          const heightToScale = Math.min(area.y, bb.height);
+          return this.doMultilineRender(
+            spec,
+            { x: area.x, y: heightToScale * toScale * 0.95 },
+            true,
+          );
+        }
+      }
     }
 
     return result;
@@ -184,12 +198,13 @@ export class LabelRenderer {
 
   /**
    * Render a single line of fragments horizontally.
+   * Returns one ColoredDrawing per visible fragment, each pre-translated into position.
    */
   private renderSingleLine(
     line: string,
     area: Vec2,
     allowOverheight: boolean,
-  ): Drawing {
+  ): ColoredDrawing[] {
     const frags = specToFragments(line);
 
     // Overheight handling
@@ -240,11 +255,17 @@ export class LabelRenderer {
       0,
     );
 
-    // Assemble: position fragments left-to-right, centered at origin
-    let result: Drawing | null = null;
+    // Assemble: position fragments left-to-right, track color per fragment
+    const coloredDrawings: ColoredDrawing[] = [];
+    let currentColor = this.opts.defaultColor;
     let x = -totalWidth / 2;
 
     for (const frag of frags) {
+      // Update color state for ColorFragment
+      if (frag instanceof ColorFragment) {
+        currentColor = frag.color;
+      }
+
       const fragResult = rendered.get(frag);
       if (!fragResult) continue;
       const fragWidth = fragResult.width;
@@ -254,12 +275,12 @@ export class LabelRenderer {
           x + fragWidth / 2,
           0,
         ]);
-        result = result ? result.fuse(translated) : translated;
+        coloredDrawings.push({ drawing: translated, color: currentColor });
       }
       x += fragWidth;
     }
 
-    return result ?? drawRectangle(0.001, 0.001);
+    return coloredDrawings;
   }
 }
 
@@ -271,7 +292,7 @@ export function renderDividedLabel(
   area: Vec2,
   divisions: number,
   options: RenderOptions,
-): Drawing {
+): ColoredDrawing[] {
   const adjustedArea: Vec2 = {
     x: area.x - options.marginMm * 2,
     y: area.y - options.marginMm * 2,
@@ -283,19 +304,49 @@ export function renderDividedLabel(
   const leftmostX = -adjustedArea.x / 2 + areaPerLabel.x / 2;
   const renderer = new LabelRenderer(options);
 
-  let result: Drawing | null = null;
+  const result: ColoredDrawing[] = [];
 
   for (let i = 0; i < labels.length; i++) {
     const label = labels[i]!;
     if (!label.trim()) continue;
 
-    const labelDrawing = renderer.render(label, areaPerLabel);
-    const translated = labelDrawing.translate([
-      leftmostX + i * areaPerLabel.x,
-      0,
-    ]);
-    result = result ? result.fuse(translated) : translated;
+    const labelDrawings = renderer.render(label, areaPerLabel);
+    const offsetX = leftmostX + i * areaPerLabel.x;
+    for (const { drawing, color } of labelDrawings) {
+      result.push({ drawing: drawing.translate([offsetX, 0]), color });
+    }
   }
 
-  return result ?? drawRectangle(0.001, 0.001);
+  return result;
+}
+
+/**
+ * Fuse all drawings in a ColoredDrawing[] into a single Drawing (ignoring color).
+ * Returns null if the array is empty.
+ */
+export function fuseColoredDrawings(drawings: ColoredDrawing[]): Drawing | null {
+  let result: Drawing | null = null;
+  for (const { drawing } of drawings) {
+    result = result ? result.fuse(drawing) : drawing;
+  }
+  return result;
+}
+
+/**
+ * Group ColoredDrawing[] by color, fusing drawings within each group.
+ */
+export function groupColoredDrawings(
+  drawings: ColoredDrawing[],
+): Map<string, Drawing> {
+  const groups = new Map<string, Drawing>();
+  for (const { drawing, color } of drawings) {
+    const existing = groups.get(color);
+    groups.set(color, existing ? existing.fuse(drawing) : drawing);
+  }
+  return groups;
+}
+
+// Keep a fallback single-drawing representation for callers that need it
+export function coloredDrawingsToSingle(drawings: ColoredDrawing[]): Drawing {
+  return fuseColoredDrawings(drawings) ?? drawRectangle(0.001, 0.001);
 }

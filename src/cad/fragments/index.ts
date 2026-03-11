@@ -5,10 +5,10 @@
  * then re-exports the registry and parser.
  */
 
-import { Fragment, FRAGMENT_REGISTRY } from "./base.js";
+import { Fragment, ModifierFragment, FRAGMENT_REGISTRY } from "./base.js";
 import { TextFragment, WhitespaceFragment } from "./text.js";
 import { SpacerFragment } from "./spacer.js";
-import { SplitterFragment, SPLIT_RE } from "./layout.js";
+import { SplitterFragment, ColorFragment, SPLIT_RE } from "./layout.js";
 
 // Side-effect imports: registers all fragment types
 import "./spacer.js";
@@ -93,11 +93,13 @@ export function specToFragments(spec: string): Fragment[] {
 
 export {
   Fragment,
+  ModifierFragment,
   FRAGMENT_REGISTRY,
   TextFragment,
   WhitespaceFragment,
   SpacerFragment,
   SplitterFragment,
+  ColorFragment,
   SPLIT_RE,
 };
 export type { FragmentRenderResult } from "./base.js";

@@ -369,5 +369,50 @@ export function drawingToFilledSVG(
   return roundSvgNumbers(raw, precision);
 }
 
+/**
+ * Export a list of ColoredDrawings as a multi-layer SVG with one <g> per unique color.
+ */
+export function coloredDrawingsToSVG(
+  drawings: Array<{ drawing: Drawing; color: string }>,
+  precision = 3,
+): string {
+  if (drawings.length === 0) {
+    return '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 5"></svg>';
+  }
+
+  // Group by color (preserve insertion order)
+  const colorGroups = new Map<string, Drawing>();
+  for (const { drawing, color } of drawings) {
+    const existing = colorGroups.get(color);
+    colorGroups.set(color, existing ? existing.fuse(drawing) : drawing);
+  }
+
+  // Get unified viewBox from fused drawing of all groups
+  let fusedAll: Drawing | null = null;
+  for (const d of colorGroups.values()) {
+    fusedAll = fusedAll ? fusedAll.fuse(d) : d;
+  }
+  const vb = fusedAll!.toSVGViewBox();
+
+  // Build one <g> per color
+  const groups: string[] = [];
+  for (const [color, drawing] of colorGroups) {
+    const paths = drawing.toSVGPaths();
+    const allD: string[] = [];
+    for (const entry of paths) {
+      const group = Array.isArray(entry) ? entry : [entry];
+      allD.push(...group);
+    }
+    const pathEl =
+      allD.length === 1
+        ? `<path d="${allD[0]}" />`
+        : `<path fill-rule="evenodd" d="${allD.join(" ")}" />`;
+    groups.push(`<g id="${color}" fill="${color}" stroke="none">${pathEl}</g>`);
+  }
+
+  const raw = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" stroke="none">${groups.join("")}</svg>`;
+  return roundSvgNumbers(raw, precision);
+}
+
 // Re-export Drawing-related helpers that fragments may use
 export { draw, drawCircle, drawRectangle };

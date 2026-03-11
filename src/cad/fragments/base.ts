@@ -29,6 +29,18 @@ export abstract class Fragment {
 }
 
 /**
+ * Non-visual modifier fragment (e.g. ColorFragment).
+ * Has zero width, no drawing, and does not appear in the output geometry.
+ */
+export abstract class ModifierFragment extends Fragment {
+  visible = false;
+
+  render(): FragmentRenderResult {
+    return { drawing: null, width: 0 };
+  }
+}
+
+/**
  * Registry mapping fragment name → factory function.
  */
 export const FRAGMENT_REGISTRY = new Map<

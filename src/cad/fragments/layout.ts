@@ -5,7 +5,7 @@
 import { drawRectangle } from "replicad";
 import type { RenderOptions } from "../options.js";
 import { glyphsToDrawing } from "../font.js";
-import { Fragment, registerFragment } from "./base.js";
+import { Fragment, ModifierFragment, registerFragment } from "./base.js";
 import type { FragmentRenderResult } from "./base.js";
 
 // ── Splitter Fragment ──────────────────────────────────────────
@@ -85,4 +85,17 @@ registerFragment(["measure"], () => {
       return { drawing, width: bb.width };
     }
   })();
+});
+
+// ── Color Fragment ──────────────────────────────────────────────
+
+/** Changes the color for all subsequent fragments on the same line. */
+export class ColorFragment extends ModifierFragment {
+  constructor(public readonly color: string) {
+    super();
+  }
+}
+
+registerFragment(["color"], (name?: string) => {
+  return new ColorFragment(name ?? "blue");
 });
