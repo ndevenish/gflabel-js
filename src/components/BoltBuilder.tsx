@@ -20,6 +20,7 @@ const HEAD_SHAPES = [
   { id: "socket", label: "Socket" },
   { id: "round", label: "Round" },
   { id: "countersunk", label: "CSK" },
+  { id: "bugle", label: "Bugle" },
   { id: "wafer", label: "Wafer" },
 ] as const;
 
@@ -38,30 +39,52 @@ const DRIVES = [
 
 const BOLT_MODIFIERS = ["tapping", "flip", "slotted", "flanged"] as const;
 const WEBBOLT_MODIFIERS = ["tapping", "partial", "flip"] as const;
+// "wood" and the pointed tip are implied by the fragment itself.
+const WOODSCREW_MODIFIERS = ["flip", "slotted", "flanged"] as const;
+
+type Mode = "bolt" | "webbolt" | "woodscrew";
+
+const MODES: { id: Mode; label: string }[] = [
+  { id: "bolt", label: "Bolt" },
+  { id: "webbolt", label: "Webbolt" },
+  { id: "woodscrew", label: "Woodscrew" },
+];
+
+/** Head shape each mode emits by default, and so omits from the spec. */
+const DEFAULT_HEAD: Record<Mode, string | null> = {
+  bolt: "pan",
+  webbolt: null,
+  woodscrew: "bugle",
+};
+
+const MODIFIERS_FOR: Record<Mode, readonly string[]> = {
+  bolt: BOLT_MODIFIERS,
+  webbolt: WEBBOLT_MODIFIERS,
+  woodscrew: WOODSCREW_MODIFIERS,
+};
 
 interface BoltBuilderProps {
   insertAtCursorRef: React.RefObject<((text: string) => void) | null>;
 }
 
 function buildSpec(
-  mode: "bolt" | "webbolt",
+  mode: Mode,
   length: number,
   headShape: string,
   drive: string | null,
   modifiers: Set<string>,
 ): string {
   const parts: string[] = [];
-  if (mode === "bolt") {
+  if (mode !== "webbolt") {
     parts.push(String(length));
   }
-  // Omit "pan" for bolt (default), always include for webbolt
-  if (mode === "webbolt" || headShape !== "pan") {
+  if (headShape !== DEFAULT_HEAD[mode]) {
     parts.push(headShape);
   }
   if (drive && mode === "webbolt") {
     parts.push(drive);
   }
-  for (const m of mode === "bolt" ? BOLT_MODIFIERS : WEBBOLT_MODIFIERS) {
+  for (const m of MODIFIERS_FOR[mode]) {
     if (modifiers.has(m)) parts.push(m);
   }
   return `{${mode}(${parts.join(",")})}`;
@@ -119,21 +142,23 @@ const labelStyle: React.CSSProperties = {
 };
 
 export function BoltBuilder({ insertAtCursorRef }: BoltBuilderProps) {
-  const [mode, setMode] = React.useState<"bolt" | "webbolt">("bolt");
+  const [mode, setMode] = React.useState<Mode>("bolt");
   const [length, setLength] = React.useState(10);
   const [headShape, setHeadShape] = React.useState("pan");
   const [drive, setDrive] = React.useState<string | null>(null);
   const [modifiers, setModifiers] = React.useState<Set<string>>(() => new Set());
 
-  const switchMode = (newMode: "bolt" | "webbolt") => {
+  const switchMode = (newMode: Mode) => {
     if (newMode === mode) return;
     setMode(newMode);
-    // Clear drive when switching to bolt (bolt doesn't support drives)
-    if (newMode === "bolt") setDrive(null);
+    // Clear drive when switching away from webbolt (only it renders drives)
+    if (newMode !== "webbolt") setDrive(null);
+    // Adopt the new mode's default head, unless one was deliberately picked
+    const wasDefault = headShape === DEFAULT_HEAD[mode];
+    const nextDefault = DEFAULT_HEAD[newMode];
+    if (wasDefault && nextDefault) setHeadShape(nextDefault);
     // Clear modifiers not available in the new mode
-    const available = new Set<string>(
-      newMode === "bolt" ? BOLT_MODIFIERS : WEBBOLT_MODIFIERS,
-    );
+    const available = new Set<string>(MODIFIERS_FOR[newMode]);
     setModifiers((prev) => {
       const next = new Set([...prev].filter((m) => available.has(m)));
       return next.size === prev.size ? prev : next;
@@ -153,7 +178,7 @@ export function BoltBuilder({ insertAtCursorRef }: BoltBuilderProps) {
     });
   };
 
-  const availableModifiers = mode === "bolt" ? BOLT_MODIFIERS : WEBBOLT_MODIFIERS;
+  const availableModifiers = MODIFIERS_FOR[mode];
 
   // Debounced SVG preview
   React.useEffect(() => {
@@ -216,19 +241,16 @@ export function BoltBuilder({ insertAtCursorRef }: BoltBuilderProps) {
       {/* Type toggle */}
       <div style={rowStyle}>
         <span style={labelStyle}>Type</span>
-        <button
-          onClick={() => switchMode("bolt")}
-          style={mode === "bolt" ? pillBtnActive : pillBtn}
-        >
-          Bolt
-        </button>
-        <button
-          onClick={() => switchMode("webbolt")}
-          style={mode === "webbolt" ? pillBtnActive : pillBtn}
-        >
-          Webbolt
-        </button>
-        {mode === "bolt" && (
+        {MODES.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => switchMode(m.id)}
+            style={mode === m.id ? pillBtnActive : pillBtn}
+          >
+            {m.label}
+          </button>
+        ))}
+        {mode !== "webbolt" && (
           <>
             <span style={{ fontSize: 11, color: "var(--text-3)", marginLeft: "auto" }}>Length</span>
             <input

@@ -244,16 +244,50 @@ registerFragment(["box"], (inWidth: string, inHeight?: string) => {
   })();
 });
 
+/**
+ * Wood-screw thread profile for one side of the shaft, generated head-to-tip
+ * (xHead < xTip) on the +y side. Each tooth is a barb standing off a straight
+ * core: a face square to the axis pointing back at the head, then a ramp down
+ * to the core. Both ends stay at the core so the caller can close onto them.
+ */
+function threadCrests(
+  xHead: number,
+  xTip: number,
+  outer: number,
+  depth: number,
+): [number, number][] {
+  const span = xTip - xHead;
+  const n = Math.max(2, Math.round(span / (outer * 1.15)));
+  const pitch = span / n;
+  const pts: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const x = xHead + (i + 0.5) * pitch;
+    pts.push([x, outer - depth], [x, outer], [x + pitch * 0.45, outer - depth]);
+  }
+  return pts;
+}
+
+const negY = ([x, y]: [number, number]): [number, number] => [x, -y];
+
 // ── Bolt Fragment ──────────────────────────────────────────────
 
-const HEAD_SHAPES = new Set(["countersunk", "pan", "round", "socket", "wafer"]);
-const MODIFIERS = new Set(["tapping", "flip", "partial"]);
+const HEAD_SHAPES = new Set([
+  "countersunk",
+  "bugle",
+  "pan",
+  "round",
+  "socket",
+  "wafer",
+]);
+const MODIFIERS = new Set(["tapping", "flip", "partial", "wood"]);
 const FEATURE_ALIAS: Record<string, string> = {
   countersink: "countersunk",
   tap: "tapping",
   tapped: "tapping",
   flipped: "flip",
   square: "socket",
+  woodscrew: "wood",
+  woodthread: "wood",
 };
 
 function parseBoltFeatures(reqFeatures: string[]): {
@@ -293,7 +327,7 @@ function parseBoltFeatures(reqFeatures: string[]): {
   return { headshape, modifiers, drives, slotted, flanged };
 }
 
-registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
+const boltFactory = (lengthStr: string, ...features: string[]): Fragment => {
   const boltLength = parseFloat(lengthStr);
   if (!Number.isFinite(boltLength)) {
     throw new Error(
@@ -320,7 +354,7 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
       const lw = height / 2.25;
       const halfSplit = 0.75;
 
-      if (headshape === "countersunk") length -= lw;
+      if (headshape === "countersunk" || headshape === "bugle") length -= lw;
 
       maxSize = Math.max(maxSize, lw * 2 + halfSplit * 2 + 0.1);
       const splitBolt = length + lw > maxSize;
@@ -329,12 +363,22 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
       let headH = height / 2;
       if (flanged) headH -= lw / 3;
 
+      // Wood screws: barbed thread down the shaft, always pointed. The barbs
+      // stand proud of a thinner core, and the point tapers off that core.
+      const wood = modifiers.has("wood");
+      const pointed = wood || modifiers.has("tapping");
+      const threadDepth = lw * 0.18;
+      // Half-width of the shaft where it meets the head and the point.
+      const shaftY = wood ? lw / 2 - threadDepth : lw / 2;
+      const tipLen = wood ? lw * 0.8 : lw / 2;
+      const tipX = pointed ? hw - tipLen : hw;
+
       // Build bolt outline as a polygon
-      const boltBottomPts: [number, number][] = modifiers.has("tapping")
+      const boltBottomPts: [number, number][] = pointed
         ? [
-            [hw - lw / 2, lw / 2],
+            [tipX, shaftY],
             [hw, 0],
-            [hw - lw / 2, -lw / 2],
+            [tipX, -shaftY],
           ]
         : [
             [hw, lw / 2],
@@ -344,16 +388,32 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
       // Build the main body outline with head-shape-specific profile
       const headX = -hw + lw; // x where head meets body
 
-      // Body/thread points (right side of bolt)
+      // Body/thread points (right side of bolt), from the head down the bottom
+      // edge, round the tip, and back along the top edge.
       let bodyRightPts: [number, number][];
       if (!splitBolt) {
-        bodyRightPts = [...boltBottomPts.slice().reverse()];
+        const crests = wood
+          ? threadCrests(headX, tipX, lw / 2, threadDepth)
+          : [];
+        bodyRightPts = [
+          ...crests.map(negY),
+          ...boltBottomPts.slice().reverse(),
+          ...crests.slice().reverse(),
+        ];
       } else {
         const xMid = lw + (maxSize - lw) / 2 - hw;
-        bodyRightPts = [
-          [xMid - lw / 2 - halfSplit, -lw / 2],
-          [xMid + lw / 2 - halfSplit, lw / 2],
-        ];
+        const breakBottom: [number, number] = [xMid - lw / 2 - halfSplit, -shaftY];
+        const breakTop: [number, number] = [xMid + lw / 2 - halfSplit, shaftY];
+        bodyRightPts = wood
+          ? [
+              ...threadCrests(headX, breakBottom[0], lw / 2, threadDepth).map(negY),
+              breakBottom,
+              breakTop,
+              ...threadCrests(headX, breakTop[0], lw / 2, threadDepth)
+                .slice()
+                .reverse(),
+            ]
+          : [breakBottom, breakTop];
       }
 
       // Draw using pen: start at head top-left, go CCW
@@ -377,42 +437,62 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
           [-hw + r * (1 - Math.SQRT1_2), -headH + r * (1 - Math.SQRT1_2)],
         );
         pen = pen.lineTo([headX, -headH]);
-        pen = pen.lineTo([headX, -lw / 2]);
+        pen = pen.lineTo([headX, -shaftY]);
         for (const pt of bodyRightPts) pen = pen.lineTo(pt);
-        pen = pen.lineTo([headX, lw / 2]);
+        pen = pen.lineTo([headX, shaftY]);
         pen = pen.lineTo([headX, headH]);
       } else if (headshape === "round") {
         // Dome: arc from (headX, headH) to (headX, -headH) bulging left through (-hw, 0)
         pen = draw([headX, headH]);
         pen = pen.threePointsArcTo([headX, -headH], [headX - lw, 0]);
-        pen = pen.lineTo([headX, -lw / 2]);
+        pen = pen.lineTo([headX, -shaftY]);
         for (const pt of bodyRightPts) pen = pen.lineTo(pt);
-        pen = pen.lineTo([headX, lw / 2]);
+        pen = pen.lineTo([headX, shaftY]);
+      } else if (headshape === "bugle") {
+        // Trumpet flare: a wide flat cap, concave sides running tangent into
+        // the shaft. Radius is set by that tangency; sagitta follows from it.
+        // Short flat rim off the cap, then the concave blend — running the arc
+        // all the way to the cap leaves a spike instead of a head edge.
+        const mx = -hw + lw * 0.22;
+        const my = headH;
+        const dx = headX - mx;
+        const dy = my - shaftY;
+        const r = (dx * dx + dy * dy) / (2 * dy);
+        const chord = Math.hypot(dx, dy);
+        const sag = r - Math.sqrt(Math.max(0, r * r - (chord * chord) / 4));
+        // Starts at the top shaft junction so close() draws the final face.
+        pen = draw([headX, shaftY]);
+        pen = pen.sagittaArcTo([mx, my], sag);
+        pen = pen.lineTo([-hw, headH]);
+        pen = pen.lineTo([-hw, -headH]);
+        pen = pen.lineTo([mx, -my]);
+        pen = pen.sagittaArcTo([headX, -shaftY], sag);
+        for (const pt of bodyRightPts) pen = pen.lineTo(pt);
       } else if (headshape === "countersunk") {
         // Tapered: wide at head (left), narrows to shaft width at body
         pen = draw([-hw, headH]);
         pen = pen.lineTo([-hw, -headH]);
-        pen = pen.lineTo([headX, -lw / 2]);
+        pen = pen.lineTo([headX, -shaftY]);
         for (const pt of bodyRightPts) pen = pen.lineTo(pt);
-        pen = pen.lineTo([headX, lw / 2]);
+        pen = pen.lineTo([headX, shaftY]);
       } else if (headshape === "wafer") {
         // Wafer: thin rectangular head — socket-style but only 1/3 linewidth wide
         const waferX = headX - lw / 3;
         pen = draw([waferX, headH]);
         pen = pen.lineTo([waferX, -headH]);
         pen = pen.lineTo([headX, -headH]);
-        pen = pen.lineTo([headX, -lw / 2]);
+        pen = pen.lineTo([headX, -shaftY]);
         for (const pt of bodyRightPts) pen = pen.lineTo(pt);
-        pen = pen.lineTo([headX, lw / 2]);
+        pen = pen.lineTo([headX, shaftY]);
         pen = pen.lineTo([headX, headH]);
       } else {
         // socket (default): straight rectangular head
         pen = draw([-hw, headH]);
         pen = pen.lineTo([-hw, -headH]);
         pen = pen.lineTo([headX, -headH]);
-        pen = pen.lineTo([headX, -lw / 2]);
+        pen = pen.lineTo([headX, -shaftY]);
         for (const pt of bodyRightPts) pen = pen.lineTo(pt);
-        pen = pen.lineTo([headX, lw / 2]);
+        pen = pen.lineTo([headX, shaftY]);
         pen = pen.lineTo([headX, headH]);
       }
 
@@ -421,10 +501,19 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
       // If split, draw the second half
       if (splitBolt) {
         const xMid = lw + (maxSize - lw) / 2 - hw;
+        const startTop: [number, number] = [xMid + lw / 2 + halfSplit, shaftY];
+        const endBottom: [number, number] = [xMid - lw / 2 + halfSplit, -shaftY];
         const secondPts: [number, number][] = [
-          [xMid + lw / 2 + halfSplit, lw / 2],
+          startTop,
+          ...(wood ? threadCrests(startTop[0], tipX, lw / 2, threadDepth) : []),
           ...boltBottomPts,
-          [xMid - lw / 2 + halfSplit, -lw / 2],
+          ...(wood
+            ? threadCrests(endBottom[0], tipX, lw / 2, threadDepth)
+                .slice()
+                .reverse()
+                .map(negY)
+            : []),
+          endBottom,
         ];
         let pen2 = draw(secondPts[0]!);
         for (let i = 1; i < secondPts.length; i++) {
@@ -460,6 +549,23 @@ registerFragment(["bolt"], (lengthStr: string, ...features: string[]) => {
       return { drawing, width: bb.width };
     }
   })();
+};
+
+registerFragment(["bolt"], boltFactory);
+
+// A wood screw is a bolt with the "wood" thread and a countersunk (triangular)
+// head unless another head shape is asked for.
+registerFragment(["woodscrew"], (lengthStr: string, ...features: string[]) => {
+  const hasHead = features.some((f) => {
+    const lower = f.toLowerCase();
+    return HEAD_SHAPES.has(FEATURE_ALIAS[lower] ?? lower);
+  });
+  return boltFactory(
+    lengthStr,
+    ...features,
+    ...(hasHead ? [] : ["bugle"]),
+    "wood",
+  );
 });
 
 // ── CullenectBolt Fragment ──────────────────────────────────

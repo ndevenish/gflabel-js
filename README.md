@@ -76,6 +76,7 @@ Text is rendered directly. Fragments are enclosed in `{braces}`:
 | `{washer}` | Flat washer |
 | `{lockwasher}` | Lock washer |
 | `{bolt(length)}` | Bolt with specified length |
+| `{woodscrew(length)}` | Wood screw (barbed thread, sharp point, bugle head) |
 | `{head(shape)}` | Bolt head (hex, phillips, slot, torx) |
 | `{hexhead}` | Hex bolt head |
 | `{circle}` | Circle |
