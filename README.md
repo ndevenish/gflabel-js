@@ -5,7 +5,7 @@ generating 3D-printable Gridfinity labels. Runs as a web app or Node CLI. My int
 project lives entirely downstream of the "reference" python version, but I'm not completely against
 adding features only here.
 
-Just be aware that the code quality might not be the greated.
+Just be aware that the code quality might not be the greatest.
 
 Built with [replicad](https://replicad.xyz/) (OpenCascade WASM), [opentype.js](https://opentype.js.org/), React, and Three.js.
 
@@ -16,7 +16,15 @@ npm install
 npm run dev
 ```
 
-Open the dev server URL, configure your label, and click Render. Export as STL, STEP, or SVG.
+Open the dev server URL, configure your label, and click Render (or leave **Auto re-render** on).
+Export a single label as **STL**, **STEP**, **SVG**, or multi-colour **3MF**.
+
+- **Preview colours** — pick the base and text colours in the *Preview* section. They drive the
+  3D preview and become the default filament colours for 3MF export.
+- **Dark mode** — toggle light/dark with the ☾/☀ button in the header. It follows your system
+  preference by default and remembers your choice.
+- **Bulk generation** — see [Bulk Generation](#bulk-generation-web-app) below to turn a CSV into
+  many labels at once.
 
 ## CLI
 
@@ -68,6 +76,7 @@ Text is rendered directly. Fragments are enclosed in `{braces}`:
 | `{washer}` | Flat washer |
 | `{lockwasher}` | Lock washer |
 | `{bolt(length)}` | Bolt with specified length |
+| `{woodscrew(length)}` | Wood screw (barbed thread, sharp point, bugle head) |
 | `{head(shape)}` | Bolt head (hex, phillips, slot, torx) |
 | `{hexhead}` | Hex bolt head |
 | `{circle}` | Circle |
@@ -98,6 +107,29 @@ Use `\n` in the label spec for multiple lines:
 npx tsx src/cli.ts pred '{bolt(20)}\nM2x20'
 ```
 
+## Bulk Generation (Web App)
+
+Click **"Génération en masse (CSV → 3MF/STL…)"** in the control panel to generate many
+labels at once from a template and a CSV file.
+
+- **Template** — an ordinary label spec plus `{{column}}` placeholders (double braces, so they
+  never clash with `{fragment}` syntax), e.g. `{nut}{{taille}}\n{{ref}}`.
+- **Data** — paste or upload a CSV whose first row is the column names. Each following row
+  becomes one label.
+- **Output** — either individual files bundled in a `.zip`, or a single combined "plate"
+  laying all labels out in a grid.
+- **Formats** — 3MF, STL, STEP, or SVG.
+- **Colours** — the base/text colour pickers default to the preview colours and can be changed
+  per export.
+- **3MF multi-colour** — the base and the text are exported as separate parts, each assigned to
+  its own **filament slot** (`extruder`) via a PrusaSlicer/OrcaSlicer model config. Drop the
+  `.3mf` into your slicer and the two colours land on two filaments automatically — no hand
+  painting. On a combined plate each label is its own movable object. Works best with the
+  **embedded** (or embossed) style; **debossed** carves the text as a void so there is no
+  separate body to colour.
+
+The single-label **3MF** button in the Export row does the same for one label.
+
 ## Label Styles
 
 - **Embossed** — Text raised above the label surface
@@ -106,8 +138,15 @@ npx tsx src/cli.ts pred '{bolt(20)}\nM2x20'
 
 ## Base Types
 
-- **pred** — Gridfinity Pred-style label with mounting holes and L-shaped edge profile
-- **plain** — Simple rectangular label
+- **pred** — Gridfinity Pred-style label with mounting holes and L-shaped edge profile; width in
+  gridfinity units
+- **predbox** — Label for Pred's parametric storage box (~25 mm); width 4–7 U
+- **tailorbox** — Larger label for Tailor Glad's storage box (5 U)
+- **plain** — Simple rectangular label with a chamfered top edge; width/height in mm
+- **cullenect** — Cullenect swappable label (36.4 × 11 mm rounded rectangle with snap-fit inserts)
+- **modern** — Label for the Modern Gridfinity Case (~22 mm high); width 3–8 U
+- **none** — No base at all; the label is extruded standalone (e.g. to place onto other models
+  in a slicer)
 
 ## Building
 

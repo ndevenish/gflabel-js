@@ -1,16 +1,18 @@
 import { LabelViewer } from "./LabelViewer.js";
 import type { MeshData } from "../cad/workerClient.js";
+import type { PreviewColors } from "../color.js";
 import type { PreviewMode } from "../App.js";
 
 interface Props {
   meshData: MeshData | null;
   svgData: string | null;
   previewMode: PreviewMode;
+  previewColors: PreviewColors;
   isRendering: boolean;
   error: string | null;
 }
 
-export function PreviewPanel({ meshData, svgData, previewMode, isRendering, error }: Props) {
+export function PreviewPanel({ meshData, svgData, previewMode, previewColors, isRendering, error }: Props) {
   const showSvg = previewMode === "svg" && svgData;
   const showMesh = previewMode === "3d";
   const hasContent = showSvg || (showMesh && meshData);
@@ -25,7 +27,7 @@ export function PreviewPanel({ meshData, svgData, previewMode, isRendering, erro
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "white",
+            background: "var(--svg-surface)",
             overflow: "hidden",
           }}
           ref={(el) => {
@@ -42,7 +44,7 @@ export function PreviewPanel({ meshData, svgData, previewMode, isRendering, erro
           }}
         />
       ) : (
-        <LabelViewer meshData={meshData} />
+        <LabelViewer meshData={meshData} colors={previewColors} />
       )}
 
       {/* Status overlay */}
@@ -56,7 +58,7 @@ export function PreviewPanel({ meshData, svgData, previewMode, isRendering, erro
             background: error
               ? "rgba(220, 38, 38, 0.9)"
               : "rgba(0, 0, 0, 0.7)",
-            color: "white",
+            color: "var(--on-accent)",
             borderRadius: 6,
             fontSize: 13,
             maxWidth: 400,

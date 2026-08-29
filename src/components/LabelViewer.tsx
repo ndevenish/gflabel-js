@@ -3,16 +3,22 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import type { MeshData } from "../cad/workerClient.js";
+import type { PreviewColors } from "../color.js";
+import { useTheme } from "../theme.js";
 
 interface Props {
   meshData: MeshData | null;
+  colors: PreviewColors;
 }
 
-const BASE_COLOR = new THREE.Color("#fdf26f"); // yellow/gold
-const LABEL_COLOR = new THREE.Color("#606060"); // near-black
-
-function LabelMesh({ meshData }: { meshData: MeshData }) {
+function LabelMesh({ meshData, colors }: { meshData: MeshData; colors: PreviewColors }) {
+  // Extract hex strings up front — the memo body has its own local `colors`
+  // (the per-vertex Float32Array), so referencing the prop inside would clash.
+  const baseHex = colors.base;
+  const labelHex = colors.label;
   const geometry = React.useMemo(() => {
+    const BASE_COLOR = new THREE.Color(baseHex);
+    const LABEL_COLOR = new THREE.Color(labelHex);
     const idx = meshData.indices;
     const srcPos = meshData.faces;
     const srcNorm = meshData.normals;
@@ -72,7 +78,7 @@ function LabelMesh({ meshData }: { meshData: MeshData }) {
     geo.computeBoundingBox();
     geo.computeBoundingSphere();
     return geo;
-  }, [meshData]);
+  }, [meshData, baseHex, labelHex]);
 
   React.useEffect(() => {
     return () => geometry.dispose();
@@ -85,21 +91,24 @@ function LabelMesh({ meshData }: { meshData: MeshData }) {
   );
 }
 
-export function LabelViewer({ meshData }: Props) {
+export function LabelViewer({ meshData, colors }: Props) {
+  const theme = useTheme();
+  // WebGL colors can't use CSS var() — resolve to a real value per theme.
+  const gridColor = theme === "dark" ? "#343c45" : "#e0e0e0";
   return (
-    <Canvas style={{ background: "#f8f9fa" }}>
+    <Canvas frameloop="demand" style={{ background: "var(--canvas)" }}>
       <PerspectiveCamera makeDefault position={[0, 0, 60]} fov={45} />
       <ambientLight intensity={0.2} />
       <directionalLight position={[10, 10, 10]} intensity={1.5} />
       <directionalLight position={[-10, -5, -10]} intensity={0.4} />
-      {meshData && <LabelMesh meshData={meshData} />}
+      {meshData && <LabelMesh meshData={meshData} colors={colors} />}
       <OrbitControls
         enableDamping
         dampingFactor={0.1}
         minDistance={10}
         maxDistance={200}
       />
-      <gridHelper args={[100, 100, "#e0e0e0", "#e0e0e0"]} rotation={[Math.PI / 2, 0, 0]} />
+      <gridHelper args={[100, 100, gridColor, gridColor]} rotation={[Math.PI / 2, 0, 0]} />
     </Canvas>
   );
 }

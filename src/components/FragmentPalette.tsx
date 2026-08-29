@@ -157,7 +157,7 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
         onChange={(e) => setFilter(e.target.value)}
         style={{
           padding: "5px 8px",
-          border: "1px solid #d1d5db",
+          border: "1px solid var(--border)",
           borderRadius: 4,
           fontSize: 12,
         }}
@@ -184,7 +184,7 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
                 cursor: "pointer",
                 fontSize: 11,
                 fontWeight: 600,
-                color: "#6b7280",
+                color: "var(--text-3)",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
               }}
@@ -203,7 +203,7 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
               </span>
               {cat}
               {entries && (
-                <span style={{ fontWeight: 400, color: "#9ca3af", marginLeft: 2 }}>
+                <span style={{ fontWeight: 400, color: "var(--text-4)", marginLeft: 2 }}>
                   {entries.length}
                 </span>
               )}
@@ -237,9 +237,9 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
                         width: "100%",
                         aspectRatio: "1",
                         padding: 4,
-                        border: "1px solid #d1d5db",
+                        border: "1px solid var(--border)",
                         borderRadius: 4,
-                        background: "#f9fafb",
+                        background: "var(--muted-surface)",
                         cursor: "pointer",
                       }}
                     >
@@ -250,7 +250,7 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
                           style={{ width: "100%", height: "100%", objectFit: "contain" }}
                         />
                       ) : (
-                        <span style={{ fontSize: 8, color: "#9ca3af" }}>
+                        <span style={{ fontSize: 8, color: "var(--text-4)" }}>
                           {frag.name.slice(0, 4)}
                         </span>
                       )}
@@ -263,7 +263,7 @@ export function FragmentPalette({ insertAtCursorRef }: Props) {
         );
       })}
       {filtered.length === 0 && (
-        <div style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", padding: 8 }}>
+        <div style={{ fontSize: 12, color: "var(--text-4)", textAlign: "center", padding: 8 }}>
           No matching fragments
         </div>
       )}

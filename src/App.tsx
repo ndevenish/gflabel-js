@@ -3,8 +3,21 @@ import { ControlPanel } from "./components/ControlPanel.js";
 import { PreviewPanel } from "./components/PreviewPanel.js";
 import type { MeshData } from "./cad/workerClient.js";
 import { BASE_TYPES, type BaseType } from "./cad/bases/base.js";
+import { DEFAULT_PREVIEW_COLORS, type PreviewColors } from "./color.js";
 
 export type PreviewMode = "svg" | "3d";
+
+const PREVIEW_COLORS_KEY = "gflabel-preview-colors";
+
+function loadPreviewColors(): PreviewColors {
+  try {
+    const raw = localStorage.getItem(PREVIEW_COLORS_KEY);
+    if (raw) return { ...DEFAULT_PREVIEW_COLORS, ...JSON.parse(raw) };
+  } catch {
+    // corrupt or unavailable — fall through to defaults
+  }
+  return { ...DEFAULT_PREVIEW_COLORS };
+}
 
 /** Parse /<baseType> from the URL pathname, returning undefined for root. */
 function parseRouteBaseType(): BaseType | undefined {
@@ -20,6 +33,15 @@ export function App() {
   const [previewMode, setPreviewMode] = React.useState<PreviewMode>("3d");
   const [isRendering, setIsRendering] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [previewColors, setPreviewColors] = React.useState<PreviewColors>(loadPreviewColors);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(PREVIEW_COLORS_KEY, JSON.stringify(previewColors));
+    } catch {
+      // localStorage full or unavailable
+    }
+  }, [previewColors]);
 
   // Listen for popstate (browser back/forward)
   React.useEffect(() => {
@@ -58,6 +80,8 @@ export function App() {
         onSvgUpdate={handleSvgUpdate}
         previewMode={previewMode}
         onPreviewModeChange={setPreviewMode}
+        previewColors={previewColors}
+        onPreviewColorsChange={setPreviewColors}
         onRenderStart={() => {
           setIsRendering(true);
           setError(null);
@@ -69,6 +93,7 @@ export function App() {
         meshData={meshData}
         svgData={svgData}
         previewMode={previewMode}
+        previewColors={previewColors}
         isRendering={isRendering}
         error={error}
       />

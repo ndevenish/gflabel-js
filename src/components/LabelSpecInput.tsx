@@ -53,7 +53,7 @@ export function LabelSpecInput({ value, onChange, insertAtCursorRef }: Props) {
         style={{
           width: "100%",
           padding: "8px",
-          border: "1px solid #ccc",
+          border: "1px solid var(--border)",
           borderRadius: 4,
           fontFamily: "monospace",
           fontSize: 13,
@@ -63,7 +63,7 @@ export function LabelSpecInput({ value, onChange, insertAtCursorRef }: Props) {
       <div
         style={{
           fontSize: 11,
-          color: "#888",
+          color: "var(--text-4)",
           marginTop: 4,
         }}
       >

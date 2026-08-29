@@ -84,5 +84,44 @@ export function extrudeLabel(
   }
 }
 
+/**
+ * Like {@link extrudeLabel}, but returns the base and label as *separate*
+ * un-fused bodies so each can be meshed and coloured independently (used for
+ * multi-colour 3MF export).
+ *
+ * - Embossed: baseBody = the base, labelBody = raised text.
+ * - Debossed: baseBody = base with text cut in, labelBody = undefined (the
+ *   text is a void, so there is nothing separate to colour).
+ * - Embedded: baseBody = base with text cut in, labelBody = flush fill text.
+ */
+export interface ExtrudePartsResult {
+  baseBody: Solid;
+  labelBody?: Solid;
+}
+
+export function extrudeLabelParts(
+  baseResult: LabelBaseResult,
+  labelDrawing: import("replicad").Drawing,
+  style: LabelStyle,
+  depth: number = 0.4,
+): ExtrudePartsResult {
+  const { solid } = baseResult;
+
+  if (style === LabelStyle.EMBOSSED) {
+    const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(depth) as Solid;
+    return { baseBody: solid ?? labelSolid, labelBody: solid ? labelSolid : undefined };
+  } else if (style === LabelStyle.DEBOSSED) {
+    const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
+    return { baseBody: solid ? (solid.cut(labelSolid) as Solid) : labelSolid };
+  } else {
+    // EMBEDDED: cut the text into the base, fill the void with a separate body.
+    const labelSolid = labelDrawing.sketchOnPlane("XY", 0).extrude(-depth) as Solid;
+    if (solid) {
+      return { baseBody: solid.cut(labelSolid) as Solid, labelBody: labelSolid };
+    }
+    return { baseBody: labelSolid };
+  }
+}
+
 export type { BaseConfig, BaseType, LabelBaseResult } from "./base.js";
 export { DEFAULT_MARGINS, DEFAULT_DEPTHS, hasAdjustableDepth, getMaxLabelDepth } from "./base.js";

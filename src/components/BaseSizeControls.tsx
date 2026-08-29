@@ -52,7 +52,7 @@ export function BaseSizeControls({
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "6px 8px",
-    border: "1px solid #ccc",
+    border: "1px solid var(--border)",
     borderRadius: 4,
   };
 

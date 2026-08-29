@@ -17,7 +17,7 @@ const L = (href: string, text: string) =>
     target: "_blank",
     rel: "noopener noreferrer",
     onClick: (e: React.MouseEvent) => e.stopPropagation(),
-    style: { color: "#2563eb", textDecoration: "underline" },
+    style: { color: "var(--accent)", textDecoration: "underline" },
   }, text);
 
 interface BaseInfo {
@@ -110,9 +110,9 @@ export function BaseSelector({ value, onChange, disabled }: Props) {
           justifyContent: "center",
           position: "relative",
           padding: "4px",
-          border: disabled ? "none" : "1px solid #d1d5db",
+          border: disabled ? "none" : "1px solid var(--border)",
           borderRadius: 6,
-          background: disabled ? "transparent" : "#fff",
+          background: disabled ? "transparent" : "var(--panel)",
           cursor: disabled ? "default" : "pointer",
         }}
       >
@@ -122,7 +122,7 @@ export function BaseSelector({ value, onChange, disabled }: Props) {
           style={{ width: "70%", height: "auto", display: "block", borderRadius: 4 }}
         />
         {!disabled && (
-          <span style={{ position: "absolute", right: 8, fontSize: 12, color: "#9ca3af" }}>
+          <span style={{ position: "absolute", right: 8, fontSize: 12, color: "var(--text-4)" }}>
             {open ? "\u25B2" : "\u25BC"}
           </span>
         )}
@@ -138,8 +138,8 @@ export function BaseSelector({ value, onChange, disabled }: Props) {
             width: 520,
             zIndex: 100,
             marginTop: 4,
-            background: "#fff",
-            border: "1px solid #d1d5db",
+            background: "var(--panel)",
+            border: "1px solid var(--border)",
             borderRadius: 8,
             boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
             maxHeight: 480,
@@ -163,16 +163,16 @@ export function BaseSelector({ value, onChange, disabled }: Props) {
                   gap: 12,
                   padding: "8px 12px",
                   border: "none",
-                  borderBottom: "1px solid #f3f4f6",
-                  background: selected ? "#eff6ff" : "#fff",
+                  borderBottom: "1px solid var(--divider)",
+                  background: selected ? "var(--accent-soft)" : "var(--panel)",
                   cursor: "pointer",
                   textAlign: "left",
                 }}
                 onMouseEnter={(e) => {
-                  if (!selected) e.currentTarget.style.background = "#f9fafb";
+                  if (!selected) e.currentTarget.style.background = "var(--muted-surface)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = selected ? "#eff6ff" : "#fff";
+                  e.currentTarget.style.background = selected ? "var(--accent-soft)" : "var(--panel)";
                 }}
               >
                 <img
@@ -189,7 +189,7 @@ export function BaseSelector({ value, onChange, disabled }: Props) {
                   <div style={{ fontSize: 14, fontWeight: 600 }}>
                     {info.label}
                   </div>
-                  <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.4, marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.4, marginTop: 2 }}>
                     {info.description}
                   </div>
                 </div>

@@ -27,6 +27,7 @@ export interface FileData {
 type PendingResolve = {
   resolve: (value: unknown) => void;
   reject: (reason: unknown) => void;
+  onProgress?: (done: number, total: number) => void;
 };
 
 let _worker: Worker | null = null;
@@ -61,6 +62,13 @@ function getWorker(): Worker {
 
       const pending = _pending.get(data.id);
       if (!pending) return;
+
+      // Progress updates keep the request pending until the final message.
+      if (data.type === "BATCH_PROGRESS") {
+        pending.onProgress?.(data.done, data.total);
+        return;
+      }
+
       _pending.delete(data.id);
 
       if (data.type === "ERROR") {
@@ -83,11 +91,14 @@ async function waitReady(): Promise<void> {
   await _readyPromise;
 }
 
-function send(msg: Record<string, unknown>): Promise<unknown> {
+function send(
+  msg: Record<string, unknown>,
+  onProgress?: (done: number, total: number) => void,
+): Promise<unknown> {
   const worker = getWorker();
   const id = nextId();
   return new Promise((resolve, reject) => {
-    _pending.set(id, { resolve, reject });
+    _pending.set(id, { resolve, reject, onProgress });
     worker.postMessage({ ...msg, id });
   });
 }
@@ -130,16 +141,59 @@ export async function renderSVG(params: {
 }
 
 /**
- * Export the last rendered solid to a file.
+ * Export the last rendered solid to a file. For 3MF, `colors` sets the base and
+ * label filament colours (falls back to the worker's defaults when omitted).
  */
 export async function exportFile(
-  format: "stl" | "step" | "svg",
+  format: "stl" | "step" | "svg" | "3mf",
+  colors?: { base: [number, number, number]; label: [number, number, number] },
 ): Promise<FileData> {
   await waitReady();
   const result = (await send({
     type: "EXPORT",
     format,
+    colors,
   })) as { type: "FILE"; buffer: ArrayBuffer; mimeType: string; filename: string };
+  return {
+    buffer: result.buffer,
+    mimeType: result.mimeType,
+    filename: result.filename,
+  };
+}
+
+export type BatchFormat = "stl" | "step" | "svg" | "3mf";
+export type BatchMode = "individual" | "combined";
+
+export interface BatchExportParams {
+  template: string;
+  rows: Record<string, string>[];
+  base: BaseConfig;
+  style: LabelStyle;
+  options?: Partial<RenderOptions>;
+  divisions?: number;
+  format: BatchFormat;
+  mode: BatchMode;
+  colors?: { base: [number, number, number]; label: [number, number, number] };
+  gapMm?: number;
+  columns?: number;
+}
+
+/**
+ * Generate a batch of labels from a template + rows. Resolves to a single
+ * downloadable file (a ZIP of individual files, or a combined plate).
+ * `onProgress(done, total)` fires as each label is rendered.
+ */
+export async function batchExport(
+  params: BatchExportParams,
+  onProgress?: (done: number, total: number) => void,
+): Promise<FileData> {
+  await waitReady();
+  const result = (await send({ type: "BATCH", ...params }, onProgress)) as {
+    type: "FILE";
+    buffer: ArrayBuffer;
+    mimeType: string;
+    filename: string;
+  };
   return {
     buffer: result.buffer,
     mimeType: result.mimeType,

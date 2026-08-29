@@ -1,5 +1,7 @@
 import React from "react";
 import { exportFile } from "../cad/workerClient.js";
+import { makeLabelFilename } from "../cad/naming.js";
+import { toPartColors, type PreviewColors } from "../color.js";
 import type { BaseType } from "../cad/bases/base.js";
 
 interface Props {
@@ -7,51 +9,19 @@ interface Props {
   baseType: BaseType;
   width: number;
   spec: string;
+  /** Base/label colours to use as the 3MF filament colours. */
+  colors: PreviewColors;
 }
 
-/**
- * Build a descriptive filename from the label configuration.
- *
- * Format: {base}[-{width}u]-{spec}.{ext}
- * e.g.  "pred-3u-M5_nut.stl", "plain-Hello_World.step"
- */
-function makeFilename(
-  baseType: BaseType,
-  width: number,
-  spec: string,
-  ext: string,
-): string {
-  // Bases that use a meaningful width parameter
-  const hasWidth = baseType === "pred" || baseType === "predbox" || baseType === "modern";
-
-  // Sanitise spec: strip fragment braces but keep content, collapse whitespace
-  const label = spec
-    .replace(/\{[|]?\}/g, "_")        // column dividers → underscore
-    .replace(/[{}]/g, "")              // drop remaining braces
-    .replace(/[<>]/g, "")             // drop alignment markers
-    .replace(/\.\.\./g, "")           // drop spacer ellipsis
-    .replace(/[/\\:*?"<>|]+/g, "_")   // filesystem-unsafe chars
-    .replace(/\s+/g, "_")             // whitespace → underscore
-    .replace(/_+/g, "_")              // collapse multiple underscores
-    .replace(/^_|_$/g, "");           // trim leading/trailing underscores
-
-  const parts: string[] = [baseType];
-  if (hasWidth) parts.push(`${width}u`);
-  if (label) parts.push(label);
-
-  const stem = parts.join("-").slice(0, 80); // cap length
-  return `${stem}.${ext}`;
-}
-
-export function DownloadButtons({ onEnsureRendered, baseType, width, spec }: Props) {
+export function DownloadButtons({ onEnsureRendered, baseType, width, spec, colors }: Props) {
   const [exporting, setExporting] = React.useState(false);
 
-  const handleExport = async (format: "stl" | "step" | "svg") => {
+  const handleExport = async (format: "stl" | "step" | "svg" | "3mf") => {
     setExporting(true);
     try {
       await onEnsureRendered();
-      const file = await exportFile(format);
-      const filename = makeFilename(baseType, width, spec, format);
+      const file = await exportFile(format, format === "3mf" ? toPartColors(colors) : undefined);
+      const filename = makeLabelFilename(baseType, width, spec, format);
       const blob = new Blob([file.buffer], { type: file.mimeType });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -70,8 +40,9 @@ export function DownloadButtons({ onEnsureRendered, baseType, width, spec }: Pro
   const btnStyle: React.CSSProperties = {
     flex: 1,
     padding: "8px 12px",
-    background: "#f1f5f9",
-    border: "1px solid #cbd5e1",
+    background: "var(--inset-2)",
+    color: "var(--text)",
+    border: "1px solid var(--border)",
     borderRadius: 4,
     cursor: exporting ? "not-allowed" : "pointer",
     fontSize: 13,
@@ -84,6 +55,14 @@ export function DownloadButtons({ onEnsureRendered, baseType, width, spec }: Pro
         Export
       </label>
       <div style={{ display: "flex", gap: 8 }}>
+        <button
+          style={{ ...btnStyle, background: "var(--accent-soft-2)", borderColor: "var(--accent-soft-border)", color: "var(--accent-soft-text)", fontWeight: 600 }}
+          disabled={exporting}
+          title="3MF multicolore : base et texte sur des slots de filament séparés"
+          onClick={() => handleExport("3mf")}
+        >
+          3MF
+        </button>
         <button
           style={btnStyle}
           disabled={exporting}

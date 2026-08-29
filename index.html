@@ -4,10 +4,83 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GFLabel — Gridfinity Label Generator</title>
+    <script>
+      // Apply the saved (or system) theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var t = localStorage.getItem("gflabel-theme");
+          if (t !== "light" && t !== "dark") {
+            t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
+    </script>
     <style>
+      /* ---- Design tokens: light (default) ---- */
+      :root,
+      :root[data-theme="light"] {
+        color-scheme: light;
+        --panel: #ffffff;
+        --canvas: #f8f9fa;
+        --muted-surface: #f9fafb;
+        --inset: #f3f4f6;
+        --inset-2: #f1f5f9;
+        --border: #d1d5db;
+        --divider: #e5e7eb;
+        --text: #1a1a1a;
+        --text-2: #374151;
+        --text-3: #6b7280;
+        --text-4: #9ca3af;
+        --text-disabled: #94a3b8;
+        --accent: #2563eb;
+        --on-accent: #ffffff;
+        --accent-soft: #eff6ff;
+        --accent-soft-2: #eef2ff;
+        --accent-soft-border: #c7d2fe;
+        --accent-soft-text: #4338ca;
+        --danger: #dc2626;
+        --warning: #b45309;
+        --grid: #e0e0e0;
+        --svg-surface: #ffffff;
+      }
+
+      /* ---- Design tokens: dark ---- */
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --panel: #1c2026;
+        --canvas: #14171c;
+        --muted-surface: #242a31;
+        --inset: #2b313a;
+        --inset-2: #2b313a;
+        --border: #3a424c;
+        --divider: #2e353e;
+        --text: #e7e9ec;
+        --text-2: #cdd2d8;
+        --text-3: #9aa2ac;
+        --text-4: #79818c;
+        --text-disabled: #5a626d;
+        --accent: #4c8dff;
+        --on-accent: #ffffff;
+        --accent-soft: #22314b;
+        --accent-soft-2: #262f47;
+        --accent-soft-border: #3f5a86;
+        --accent-soft-text: #aab6f5;
+        --danger: #f26d6d;
+        --warning: #d79a3f;
+        --grid: #343c45;
+        --svg-surface: #cdd0d3;
+      }
+
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body, #root { width: 100%; height: 100%; }
-      body { font-family: system-ui, -apple-system, sans-serif; }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: var(--canvas);
+        color: var(--text);
+      }
     </style>
   </head>
   <body>

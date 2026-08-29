@@ -4,12 +4,15 @@ import { BaseSizeControls, defaultWidth } from "./BaseSizeControls.js";
 import { LabelSpecInput } from "./LabelSpecInput.js";
 import { FragmentPalette } from "./FragmentPalette.js";
 import { DownloadButtons } from "./DownloadButtons.js";
+import { BatchPanel } from "./BatchPanel.js";
 import { renderLabel, renderSVG, ensureReady } from "../cad/workerClient.js";
 import type { MeshData } from "../cad/workerClient.js";
 import { LabelStyle, FontStyle } from "../cad/options.js";
 import type { BaseConfig, BaseType } from "../cad/bases/base.js";
 import { DEFAULT_DEPTHS, hasAdjustableDepth, getMaxLabelDepth } from "../cad/bases/index.js";
 import { CULLENECT_VERSIONS } from "../cad/bases/cullenect.js";
+import { getCurrentTheme, setTheme, type Theme } from "../theme.js";
+import type { PreviewColors } from "../color.js";
 import type { PreviewMode } from "../App.js";
 
 const STORAGE_KEY = "gflabel-settings";
@@ -76,6 +79,8 @@ interface Props {
   onSvgUpdate: (svg: string) => void;
   previewMode: PreviewMode;
   onPreviewModeChange: (mode: PreviewMode) => void;
+  previewColors: PreviewColors;
+  onPreviewColorsChange: (colors: PreviewColors) => void;
   onRenderStart: () => void;
   onRenderEnd: () => void;
   onError: (error: string) => void;
@@ -88,6 +93,8 @@ export function ControlPanel({
   onSvgUpdate,
   previewMode,
   onPreviewModeChange,
+  previewColors,
+  onPreviewColorsChange,
   onRenderStart,
   onRenderEnd,
   onError,
@@ -230,7 +237,10 @@ export function ControlPanel({
   const doRenderRef = React.useRef(doRender);
   React.useEffect(() => { doRenderRef.current = doRender; }, [doRender]);
 
-  // Auto-render: debounced in SVG mode on input changes, immediate on mode switch
+  // Auto-render: wait for a pause in edits before generating, but switch preview
+  // mode immediately. Each edit resets the timer (cleanup clears the previous
+  // one), so generation only fires ~2s after the last change.
+  const AUTO_RENDER_DELAY_MS = 2000;
   const prevModeRef = React.useRef(previewMode);
   React.useEffect(() => {
     const modeChanged = prevModeRef.current !== previewMode;
@@ -239,7 +249,7 @@ export function ControlPanel({
     if (!workerReady || !spec.trim()) return;
     if (!autoRender && !modeChanged) return;
 
-    const delay = modeChanged ? 0 : previewMode === "svg" ? 300 : 600;
+    const delay = modeChanged ? 0 : AUTO_RENDER_DELAY_MS;
     const timer = setTimeout(() => {
       doRenderRef.current();
     }, delay);
@@ -250,14 +260,24 @@ export function ControlPanel({
   const handleRender = doRender;
 
   const [advancedOpen, setAdvancedOpen] = React.useState(false);
+  const [batchOpen, setBatchOpen] = React.useState(false);
+  const [theme, setThemeState] = React.useState<Theme>(getCurrentTheme);
   const baseZoneRef = React.useRef<HTMLDivElement>(null);
+
+  const toggleTheme = () => {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    setThemeState(next);
+  };
 
   return (
     <div
       style={{
         width: 340,
         minWidth: 340,
-        borderRight: "1px solid #ddd",
+        borderRight: "1px solid var(--border)",
+        background: "var(--panel)",
+        color: "var(--text)",
         display: "flex",
         flexDirection: "column",
         height: "100%",
@@ -272,7 +292,7 @@ export function ControlPanel({
             <a
               href="/"
               onClick={(e) => { e.preventDefault(); onNavigateHome(); }}
-              style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#2563eb", textDecoration: "none", cursor: "pointer" }}
+              style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--accent)", textDecoration: "none", cursor: "pointer" }}
             >
               GFLabel
             </a>
@@ -287,7 +307,7 @@ export function ControlPanel({
             style={{
               display: "flex",
               alignItems: "center",
-              color: "#6b7280",
+              color: "var(--text-3)",
               textDecoration: "none",
             }}
           >
@@ -296,21 +316,40 @@ export function ControlPanel({
             </svg>
           </a>
           </div>
-          <button
-            onClick={resetSettings}
-            title="Reset all settings to defaults"
-            style={{
-              padding: "3px 8px",
-              border: "1px solid #d1d5db",
-              borderRadius: 4,
-              background: "#f9fafb",
-              cursor: "pointer",
-              fontSize: 11,
-              color: "#6b7280",
-            }}
-          >
-            Reset
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Passer en thème clair" : "Passer en thème sombre"}
+              aria-label="Basculer le thème clair/sombre"
+              style={{
+                padding: "3px 8px",
+                border: "1px solid var(--border)",
+                borderRadius: 4,
+                background: "var(--muted-surface)",
+                cursor: "pointer",
+                fontSize: 13,
+                lineHeight: 1.2,
+                color: "var(--text-3)",
+              }}
+            >
+              {theme === "dark" ? "☀" : "☾"}
+            </button>
+            <button
+              onClick={resetSettings}
+              title="Reset all settings to defaults"
+              style={{
+                padding: "3px 8px",
+                border: "1px solid var(--border)",
+                borderRadius: 4,
+                background: "var(--muted-surface)",
+                cursor: "pointer",
+                fontSize: 11,
+                color: "var(--text-3)",
+              }}
+            >
+              Reset
+            </button>
+          </div>
         </div>
 
         {/* Base config zone with thin Advanced strip on right */}
@@ -370,7 +409,7 @@ export function ControlPanel({
             </div>
 
             {/* Soft divider at bottom of base settings — extends past the Advanced strip */}
-            <div style={{ borderTop: "1px solid #e5e7eb", marginRight: -36 }} />
+            <div style={{ borderTop: "1px solid var(--divider)", marginRight: -36 }} />
           </div>
 
           {/* Thin vertical Advanced strip — spans full height including divider */}
@@ -386,14 +425,14 @@ export function ControlPanel({
               justifyContent: "center",
               padding: 0,
               border: "none",
-              borderLeft: "1px solid #e5e7eb",
-              borderBottom: "1px solid #e5e7eb",
-              background: advancedOpen ? "#2563eb" : "#f9fafb",
+              borderLeft: "1px solid var(--divider)",
+              borderBottom: "1px solid var(--divider)",
+              background: advancedOpen ? "var(--accent)" : "var(--muted-surface)",
               cursor: "pointer",
               writingMode: "vertical-rl",
               fontSize: 10,
               fontWeight: 500,
-              color: advancedOpen ? "#fff" : "#9ca3af",
+              color: advancedOpen ? "var(--on-accent)" : "var(--text-4)",
               letterSpacing: "0.5px",
             }}
           >
@@ -429,9 +468,9 @@ export function ControlPanel({
             top: baseZoneRef.current.offsetTop,
             height: baseZoneRef.current.offsetHeight,
             width: 300,
-            background: "#fff",
-            borderRight: "1px solid #ddd",
-            borderBottom: "1px solid #ddd",
+            background: "var(--panel)",
+            borderRight: "1px solid var(--border)",
+            borderBottom: "1px solid var(--border)",
             boxShadow: "2px 2px 8px rgba(0,0,0,0.08)",
             zIndex: 50,
             padding: 16,
@@ -462,7 +501,7 @@ export function ControlPanel({
                   }}
                   style={{ flex: 1, padding: "4px 6px", width: 60 }}
                 />
-                <span style={{ fontSize: 12, color: "#6b7280" }}>mm</span>
+                <span style={{ fontSize: 12, color: "var(--text-3)" }}>mm</span>
               </div>
             )}
 
@@ -491,7 +530,7 @@ export function ControlPanel({
                 }}
                 style={{ flex: 1, padding: "4px 6px", width: 60 }}
               />
-              <span style={{ fontSize: 12, color: "#6b7280" }}>mm</span>
+              <span style={{ fontSize: 12, color: "var(--text-3)" }}>mm</span>
             </div>
 
             <div style={{ fontWeight: 600, marginTop: 4 }}>Scale</div>
@@ -538,7 +577,7 @@ export function ControlPanel({
       </div>
 
       {/* Bottom zone: preview + render + export (pinned) */}
-      <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 12, flexShrink: 0, borderTop: "1px solid #eee" }}>
+      <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 12, flexShrink: 0, borderTop: "1px solid var(--divider)" }}>
         <div style={{ paddingTop: 12 }}>
           <label style={{ display: "block", marginBottom: 4, fontSize: 13 }}>
             Preview
@@ -556,7 +595,7 @@ export function ControlPanel({
               display: "flex",
               borderRadius: 6,
               overflow: "hidden",
-              border: "1px solid #d1d5db",
+              border: "1px solid var(--border)",
             }}
           >
             {(["svg", "3d"] as const).map((mode) => (
@@ -567,8 +606,8 @@ export function ControlPanel({
                   flex: 1,
                   padding: "6px 0",
                   border: "none",
-                  background: previewMode === mode ? "#2563eb" : "#f3f4f6",
-                  color: previewMode === mode ? "white" : "#374151",
+                  background: previewMode === mode ? "var(--accent)" : "var(--inset)",
+                  color: previewMode === mode ? "var(--on-accent)" : "var(--text-2)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -578,6 +617,29 @@ export function ControlPanel({
               </button>
             ))}
           </div>
+
+          {/* Preview colours — also the default filament colours for 3MF export */}
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 4 }}>
+              Couleurs — aperçu 3D &amp; défaut export 3MF
+            </div>
+            <div style={{ display: "flex", gap: 16 }}>
+              {([
+                ["Base", "base", "Couleur de la base"],
+                ["Texte", "label", "Couleur du texte"],
+              ] as const).map(([label, key, title]) => (
+                <label key={key} title={title} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer" }}>
+                  <input
+                    type="color"
+                    value={previewColors[key]}
+                    onChange={(e) => onPreviewColorsChange({ ...previewColors, [key]: e.target.value })}
+                    style={{ width: 30, height: 24, padding: 0, border: "1px solid var(--border)", borderRadius: 4, background: "none", cursor: "pointer" }}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
         </div>
 
         {!autoRender && (
@@ -586,8 +648,8 @@ export function ControlPanel({
             disabled={!workerReady || !spec.trim()}
             style={{
               padding: "10px 16px",
-              background: workerReady ? "#2563eb" : "#94a3b8",
-              color: "white",
+              background: workerReady ? "var(--accent)" : "var(--text-disabled)",
+              color: "var(--on-accent)",
               border: "none",
               borderRadius: 6,
               cursor: workerReady ? "pointer" : "not-allowed",
@@ -599,8 +661,42 @@ export function ControlPanel({
           </button>
         )}
 
-        <DownloadButtons onEnsureRendered={ensureRendered3D} baseType={baseType} width={width} spec={spec} />
+        <DownloadButtons onEnsureRendered={ensureRendered3D} baseType={baseType} width={width} spec={spec} colors={previewColors} />
+
+        <button
+          onClick={() => setBatchOpen(true)}
+          disabled={!workerReady}
+          title="Générer des étiquettes en masse depuis un CSV"
+          style={{
+            padding: "8px 12px",
+            background: "var(--panel)",
+            color: workerReady ? "var(--accent)" : "var(--text-disabled)",
+            border: `1px solid ${workerReady ? "var(--accent)" : "var(--border)"}`,
+            borderRadius: 6,
+            cursor: workerReady ? "pointer" : "not-allowed",
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          Génération en masse (CSV → 3MF/STL…)
+        </button>
       </div>
+
+      {batchOpen && (
+        <BatchPanel
+          onClose={() => setBatchOpen(false)}
+          baseType={baseType}
+          width={width}
+          height={height}
+          version={version}
+          depth={depth}
+          labelDepth={labelDepth}
+          style={style}
+          font={font}
+          initialTemplate={spec}
+          initialColors={previewColors}
+        />
+      )}
     </div>
   );
 }
